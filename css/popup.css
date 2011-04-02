@@ -1,0 +1,66 @@
+﻿* { 
+margin: 0 0 0 0;
+padding: 0 0 0 0;
+}
+body {
+font-size:14px;
+font-family: "arial", "helvetica", sans-serif;
+overflow:hidden;
+}
+fieldset{
+border: none;
+}
+
+textarea { 
+margin-bottom:7px;
+font-family: "consolas", "Terminus", "lucida console", "courier new", "courier", monospace;
+font-size: 12px;
+}
+
+br {
+clear:both;
+}
+
+button {
+background:#eee;
+padding-top:5px;
+padding-bottom:5px;
+border-bottom-color:#999;
+border-bottom-style:solid;
+border-bottom-width:1px;
+border-left-color:#ccc;
+border-left-style:solid;
+border-left-width:1px;
+border-right-color:#999;
+border-right-style:solid;
+border-right-width:1px;
+border-top-color:#ccc;
+border-top-style:solid;
+border-top-width:1px;
+cursor:pointer;
+margin-top:2px;
+vertical-align: middle;
+}
+
+.toolbtn {
+margin-left: 5px;
+margin-top: 0px;
+padding-top: 2px;
+padding-bottom:2px;
+display:inline-block;
+width:50px;
+}
+
+#encode{
+display:block;
+width:596px;
+}
+
+#spanmethod {
+float: left;
+}
+#spandirection {
+float: right;
+}
+
+#encode:lang(ru){content: 'Перекодировать';/*Convert*/}

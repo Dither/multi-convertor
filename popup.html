@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MultiConvertor</title>
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-store, no-cache, must-revalidate" />
+<link rel='stylesheet' href='css/popup.css' />
+<script type='text/javascript' src='scripts/encode_functions.js'></script>
+<script type='text/javascript'>
+
+function doParse() {
+    if (document.getElementById('inputtext').value === '') return;
+    document.getElementById('encode').disabled = true;
+
+    var text = document.getElementById('inputtext').value;
+    var method = document.getElementById('encmethod').value;
+    var direction = document.getElementById('encdirection').value;
+    
+    //log('[MultiConvertor]: '+text + ' '+ method + ' '+ direction);
+    if (METHODS[method]) {
+        if (METHODS[method].init) METHODS[method].init();
+        if (direction === 'encode' && METHODS[method].encode) text = METHODS[method].encode(text) 
+        else if (METHODS[method].decode) text = METHODS[method].decode(text);
+    }
+
+    if (text) document.getElementById('inputtext').value = text;
+    document.getElementById('inputtext').focus()
+    setTimeout(function () {
+        document.getElementById('encode').disabled = false;
+    }, 100);
+}
+
+function getHelp() {
+    try {
+    if (!METHODS[document.getElementById('encmethod').value]) return;
+        alert('Help: \n' + METHODS[document.getElementById('encmethod').value].help);
+    } catch (e) {;}
+}
+
+// Opera specific
+function log(){ /*if (s2b(storage['debug_output']))*/ opera.postError(Array.prototype.slice.call(arguments))}
+var theport;
+function onMessageHandler(event) {
+    log('[MultiConvertor]: the popup.html onMessageHandler received: ' + event.data.type);
+    switch (event.data.type) {
+    case 'give-url':
+    case 'give-selection':
+        document.getElementById('inputtext').value = event.data.text;
+        break;
+    default:
+    }
+    document.getElementById('inputtext').focus();
+}
+
+function sendMessage(message) {
+    if (theport && message) theport.postMessage(message);
+    log('[MultiConvertor]: the popup.html sendMessage sent ' + message.type);
+}
+
+if (opera.extension) opera.extension.onmessage = function (event) {
+    if (event.data == "send_tab_port") {
+        if (event.ports.length > 0) {
+            theport = event.ports[0];
+            theport.onmessage = onMessageHandler;
+            log('[MultiConvertor]: the popup.html received port ' + theport);
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementsByTagName('html')[0].setAttribute('lang', window.navigator.language.slice(0, 2));
+
+    var selector = document.getElementById('encmethod');
+    if (selector) {
+        for (var method in METHODS) {
+            if (!METHODS[method].name) continue;
+            var opt = document.createElement('option');
+            opt.innerHTML = METHODS[method].name;
+            opt.value = method.toString();
+            selector.appendChild(opt);
+        }
+
+        document.getElementById('encmethod').addEventListener('change', function () {
+            document.getElementById('encdirection').disabled = false;
+            var method = this.value;
+            if (!(METHODS[method].encode && METHODS[method].decode)) {
+                document.getElementById('encdirection').value = 'encode';
+                document.getElementById('encdirection').disabled = true;
+            }
+        }, false);
+    }
+    document.getElementById('inputtext').focus();
+}, false);
+</script>
+</head>
+<body>
+    <fieldset class="config">
+    <span id="spanmethod">
+    <label for="encmethod" id="labelencmethod">Conversion algorithm:</label>
+    <select name="encmethod" id="encmethod" accesskey="M" tabindex="2">
+    </select>
+    </span>
+    <button onclick="sendMessage({type:'get-selection'});" id="getsel" class="toolbtn">SEL</button>
+    <button onclick="sendMessage({type:'get-url'});" id="geturl" class="toolbtn">URL</button>
+    <button onclick="getHelp()" id="gethelp" class="toolbtn">HELP</button>
+    <span id="spandirection">
+    <label for="encdirection" id="labelencdirection">Direction:</label>
+    <select name="encdirection" id="encdirection" accesskey="D" tabindex="3">
+      <option value="encode">encode</option>
+      <option value="decode">decode</option>
+      <option value="guess">guess</option>
+    </select>
+    </span>
+    </fieldset><br>
+<form action="?" method="post">
+    <fieldset class="inputbox">
+    <textarea id="inputtext" type="text" name="inputtext" cols="82" rows="25" required placeholder="Something to convert..." tabindex="1"></textarea>
+    <button onclick="doParse()" id="encode">Convert</button>
+  </fieldset>
+</form>
+</body>
+</html>
