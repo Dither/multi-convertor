@@ -4,7 +4,8 @@
 <title>MultiConvertor</title>
 <script type="text/javascript">
 // Opera specific
-function log(){ /*if (s2b(storage['debug_output']))*/ opera.postError(Array.prototype.slice.call(arguments))}
+var debug_output = false;
+function log(){ if (debug_output) opera.postError(Array.prototype.slice.call(arguments))}
 function setupConnection() { opera.extension.onconnect = onConnectHandler; }
 
 function onConnectHandler(event) {

@@ -20,47 +20,72 @@ hexunicode : {
     },
     decode: function (text) {
         return text = text.replace(/\\u[0-9a-f]{3,4}/gi, function (match) { return String.fromCharCode(parseInt(match.substring(2), 16)); });
+    },
+    guess: function (text) {
+        if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text) }
+        else { return this.encode(text) }
     }
 },
 
-URI : {
-	name: 'URI',
-	help: 'The encodeURI method returns an encoded URI. It will not encode: ~!@#$&*()=:/,;?+\' If you pass the result to decodeURI, the original string is returned.',
-	encode: function (text) {
-		return encodeURI(text);
-	},
-	decode: function (text) {
-		return decodeURI(text);
-	}
+URI: {
+    name: 'URI',
+    help: 'The encodeURI method returns an encoded URI. It will not encode: ~!@#$&*()=:/,;?+\' If you pass the result to decodeURI, the original string is returned.',
+    encode: function (text) { return encodeURI(text) },
+    decode: function (text) { return decodeURI(text) },
+    guess: function (text) {
+        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text) }
+        else { return this.encode(text) }
+    }
 },
 
 URIComponent : {
-	name: 'URI component',
-	help: 'The encodeURIComponent method returns an encoded URI. It will not encode: ~!*()\' If you pass the result to decodeURIComponent, the original string is returned.',
-	encode: function (text) {
-		return encodeURIComponent(text);
-	},
-	decode: function (text) {
-		return decodeURIComponent(text);
-	}
+    name: 'URI component',
+    help: 'The encodeURIComponent method returns an encoded URI. It will not encode: ~!*()\' If you pass the result to decodeURIComponent, the original string is returned.',
+    encode: function (text) { return encodeURIComponent(text) },
+    decode: function (text) { return decodeURIComponent(text) },
+    guess: function (text) {
+        if (text.match(/[@#$&=:/,;?+]+/)) { return this.encode(text) }
+        else { return this.decode(text) }
+    }
 },
 
-escape : {
-	name: 'escape',
-	help: 'escape() will not encode: @*/+ The escape method returns a string value (in Unicode format) that contains the contents of [the argument]. All spaces, punctuation, accented characters, and any other non-ASCII characters are replaced with %xx encoding, where xx is equivalent to the hexadecimal number representing the character. For example, a space is returned as "%20." Unescape reverts that.',
-	encode: function (text) {
-		return escape(text);
-	},
-	decode: function (text) {
-		return unescape(text);
-	}
+ESC : {
+    name: 'escape',
+    help: 'escape() will not encode: @*/+ The escape method returns a string value (in Unicode format) that contains the contents of [the argument]. All spaces, punctuation, accented characters, and any other non-ASCII characters are replaced with %xx encoding, where xx is equivalent to the hexadecimal number representing the character. For example, a space is returned as "%20." Unescape reverts that.',
+    encode: function (text) { return escape(text) },
+    decode: function (text) { return unescape(text) },
+    guess: function (text) {
+        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text) }
+        else { return this.encode(text) }
+    }
+},
+
+REGEXESC : {
+    name: 'RegExp escape',
+    help: 'Escapes a minimal set of characters (\, *, +, ?, |, {, }, [, ], (, ), ^, $, ., #, and white space) by replacing them with their escape codes. This instructs the regular expression engine to interpret these characters literally rather than as metacharacters. Decode function reverts that.',
+    encode: function (text) { return text.replace(/[[\]{}()*+?.\\^$|#\s]/g, "\\$&") },
+    decode: function (text) { return text.replace(/(?:\\)([[\]{}()*+?.\\^$|#\s])/g, "$1") },
+    guess: function (text) {
+        if (text.match(/(?:\\)([[\]{}()*+?.\\^$|#\s])/)) { return this.decode(text) }
+        else { return this.encode(text) }
+    }
+},
+
+reverse: {
+    name: 'reverse',
+    help: 'Reverses string lettering. For example Test becomes tseT and the other way.',
+    encode: function(text) { return text.split("").reverse().join("") },
+    decode: function(text) { return this.encode(text) },
+    guess: function (text) {
+        return this.encode(text);
+    }
 },
 
 UTF8 : {
-	name: 'utf-8',
-encode: function(argString) {
-    // Encodes an ISO-8859-1 string to UTF-8  
-    var string = (argString + ''); // .replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+name: 'UTF-8',
+help: 'Encodes an ISO-8859-1 string to UTF-8 and the other way.',
+encode: function(text) {
+    var string = (text + ''); // .replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     var utftext = "",
         start, end, stringl = 0;
  
@@ -70,29 +95,20 @@ encode: function(argString) {
         var c1 = string.charCodeAt(n);
         var enc = null;
  
-        if (c1 < 128) {
-            end++;
-        } else if (c1 > 127 && c1 < 2048) {
-            enc = String.fromCharCode((c1 >> 6) | 192) + String.fromCharCode((c1 & 63) | 128);
-        } else {
-            enc = String.fromCharCode((c1 >> 12) | 224) + String.fromCharCode(((c1 >> 6) & 63) | 128) + String.fromCharCode((c1 & 63) | 128);
-        }
+        if (c1 < 128) { end++; } 
+        else if (c1 > 127 && c1 < 2048) { enc = String.fromCharCode((c1 >> 6) | 192) + String.fromCharCode((c1 & 63) | 128); }
+        else { enc = String.fromCharCode((c1 >> 12) | 224) + String.fromCharCode(((c1 >> 6) & 63) | 128) + String.fromCharCode((c1 & 63) | 128); }
         if (enc !== null) {
-            if (end > start) {
-                utftext += string.slice(start, end);
-            }
+            if (end > start) { utftext += string.slice(start, end); }
             utftext += enc;
             start = end = n + 1;
         }
     }
  
-    if (end > start) {
-        utftext += string.slice(start, stringl);
-    }
- 
+    if (end > start) { utftext += string.slice(start, stringl); }
     return utftext;
 },
-    decode: function(str_data) {
+decode: function(text) {
     // Converts a UTF-8 encoded string to ISO-8859-1  
     var tmp_arr = [],
         i = 0,
@@ -101,51 +117,57 @@ encode: function(argString) {
         c2 = 0,
         c3 = 0;
  
-    str_data += '';
+    text += '';
  
-    while (i < str_data.length) {
-        c1 = str_data.charCodeAt(i);
+    while (i < text.length) {
+        c1 = text.charCodeAt(i);
         if (c1 < 128) {
             tmp_arr[ac++] = String.fromCharCode(c1);
             i++;
         } else if (c1 > 191 && c1 < 224) {
-            c2 = str_data.charCodeAt(i + 1);
+            c2 = text.charCodeAt(i + 1);
             tmp_arr[ac++] = String.fromCharCode(((c1 & 31) << 6) | (c2 & 63));
             i += 2;
         } else {
-            c2 = str_data.charCodeAt(i + 1);
-            c3 = str_data.charCodeAt(i + 2);
+            c2 = text.charCodeAt(i + 1);
+            c3 = text.charCodeAt(i + 2);
             tmp_arr[ac++] = String.fromCharCode(((c1 & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
             i += 3;
         }
     }
      return tmp_arr.join('');
+},
+guess: function (text) {
+     if (text.match(/\u00d1|\u00c1|\u00c2|\u00c3|\u00c9|\u00cd|\u00d3|\u00da|\u00dc|\u00f1|\u00e1|\u00e9|\u00ed|\u00f3|\u00fa|\u00fc/)) { return this.decode(text) }
+     else { return this.encode(text) }
 }
 },
 
-CRC32 : {
-	name: 'CRC32',
-	encode: function (str) {
-    	str = METHODS.UTF8.encode(str);
+CRC32: {
+    name: 'CRC32',
+    help: 'Calculates CRC32 checksum of text string.',
+    encode: function (str) {
+        str = METHODS.UTF8.encode(str);
     	var table = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
  
-    var crc = 0;
-    var x = 0;
-    var y = 0;
- 
-    crc = crc ^ (-1);
-    for (var i = 0, iTop = str.length; i < iTop; i++) {
-        y = (crc ^ str.charCodeAt(i)) & 0xFF;
-        x = "0x" + table.substr(y * 9, 8);
-        crc = (crc >>> 8) ^ x;
+        var crc = 0;
+        var x = 0;
+        var y = 0;
+
+        crc = crc ^ (-1);
+        for (var i = 0, iTop = str.length; i < iTop; i++) {
+            y = (crc ^ str.charCodeAt(i)) & 0xFF;
+            x = "0x" + table.substr(y * 9, 8);
+            crc = (crc >>> 8) ^ x;
+        }
+        return (0xFFFFFFFF + (crc ^ (-1)) + 1).toString(16).toUpperCase(); //negative hexadecimal fix
     }
-    return (0xFFFFFFFF + (crc ^ (-1)) + 1).toString(16).toUpperCase();
-},
 },
 
 MD5 : {
-   name: 'MD5',
-   encode: function (str) {
+name: 'MD5',
+help: 'Calculates MD5 checksum of text string.',
+encode: function (str) {
     var xl;
     var rotateLeft = function (lValue, iShiftBits) { return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits)); };
     var addUnsigned = function (lX, lY) {
@@ -333,10 +355,11 @@ MD5 : {
 },
 
 HTMLspecialchars : {
-	 name: 'HTML special chars',
-	 quote_style: null,
-	 charset: null,
-	 double_encode: null,
+name: 'HTML special chars',
+help: 'Method converts HTML special characters to their HTML representation.',
+quote_style: null,
+charset: null,
+double_encode: null,
 encode: function  (string) {
     // Convert special characters to HTML entities  
     var optTemp = 0,
@@ -420,8 +443,8 @@ decode: function  (string) {
         quote_style = optTemp;
     }
     if (quote_style & OPTS.ENT_HTML_QUOTE_SINGLE) {
-        string = string.replace(/&#0*39;/g, "'"); // PHP doesn't currently escape if more than one 0, but it should
-        // string = string.replace(/&apos;|&#x0*27;/g, "'"); // This would also be useful here, but not a part of PHP
+        string = string.replace(/&#0*39;/g, "'");
+        // string = string.replace(/&apos;|&#x0*27;/g, "'");
     }
     if (!noquotes) {
         string = string.replace(/&quot;/g, '"');
@@ -430,11 +453,16 @@ decode: function  (string) {
     string = string.replace(/&amp;/g, '&');
  
     return string;
+},
+guess: function (text) {
+     if (text.match(/&\#|&\w+;/)) { return this.decode(text) }
+     else { return this.encode(text) }
 }
 },
 
 HTMLentities : {
 name: 'HTML entities',
+help: 'Method converts HTML entities characters to their HTML representation.',
 quote_style: 'ENT_NOQUOTES',
 translations: function(table) {
     // *     example 1: get_html_translation_table('HTML_SPECIALCHARS');
@@ -625,11 +653,16 @@ decode: function(string) {
     tmp_str = tmp_str.split('&#039;').join("'");
  
     return tmp_str;
+},
+guess: function (text) {
+     if (text.match(/&\#|&\w+;/)) { return this.decode(text) }
+     else { return this.encode(text) }
 }
 },
 
 BASE64 : {
     name: 'base64',
+    help: 'Method encodes text as base64 and the other way around.',
     // Global lookup arrays for base64 conversions
     enc64List : [], 
     dec64List: [],
@@ -705,11 +738,16 @@ BASE64 : {
         while (typeof input[ptr] != 'undefined');
         output += (n % 4 == 3) ? String.fromCharCode(c) + String.fromCharCode(d) : ((n % 4 == 2) ? String.fromCharCode(c) : "");
         return METHODS.UTF8.decode(output);
+    },
+    guess: function (text) {
+         if (text.match(/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/i)) { return this.decode(text) }
+         else { return this.encode(text) }
     }
 },
 
 UUENCODE : {
 name: 'UUE encode',
+help: 'Method encodes text as UUE.',
 is_scalar: function (mixed_var) {
     // Returns true if value is a scalar  
     return (/boolean|number|string/).test(typeof mixed_var);
@@ -956,12 +994,16 @@ encode : function(text) {
     var trans="";
     for (var n=0;n<text.length;n++) trans += translit(text.substr(n,1));
     return trans;
+},
+guess: function (text) {
+     if (text.match(/[а-яА-Я]+/i)) { return this.encode(text) }
+     else { return this.decode(text) }
 }
 },
 
 bookmarklet: {
     name: 'bookmarklet',
-    help: 'The bookmarklet method encodes JS-code into bookmarklet format.',
+    help: 'Method encodes JavaScript-code into bookmarklet format.',
     encode: function (text) {
 		var literalStrings;  // For temporary storage of literal strings.
 
@@ -1064,6 +1106,7 @@ bookmarklet: {
             '\\?': '%3F'
         };
         for (var val in replacers) code = code.replace(new RegExp(val, "g"), replacers[val]);
+        //code = encodeURIcomponent(code); // better?
 
         if (code.substring(0, 11) == 'javascript:') code = code.substring(11);
         if ((code.substring(0, 12) + code.substring(code.length - 5)) != '(function(){})();') code = '(function(){' + code + '})();';

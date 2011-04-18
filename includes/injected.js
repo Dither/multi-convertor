@@ -1,5 +1,4 @@
 // Opera specific
-function log(){ /*if (s2b(storage['debug_output']))*/ opera.postError(Array.prototype.slice.call(arguments))}
 function selText(w) {
     var t;
     return w ? w.document.getSelection() || (t = w.opera.lastClick && w.opera.lastClick.textArea) && t.value.substring(t.selectionStart, t.selectionEnd) : ''
@@ -11,13 +10,13 @@ opera.extension.onmessage = function( event ){
 		background = event.source; // in case of need to send anything to background
 		var channel = new MessageChannel();
 		event.ports[0].postMessage('send_tab_port', [channel.port2] );
-		opera.postError('[MultiConvertor]: injected script sent it\'s port.');
+		//opera.postError('[MultiConvertor]: injected script sent it\'s port.');
 		channel.port1.onmessage = onPopupMessageHandler;
 	}
 }
 
 function onPopupMessageHandler(event){
-    opera.postError('[MultiConvertor]: injected script onPopupMessageHandler received '+event.data.type);
+    //opera.postError('[MultiConvertor]: injected script onPopupMessageHandler received '+event.data.type);
     switch (event.data.type) {
     case 'get-selection':
         var seltext = selText(window);
