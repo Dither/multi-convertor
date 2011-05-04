@@ -1,4 +1,4 @@
-// this code supposed to be browser independent
+﻿// this code supposed to be browser independent
 var METHODS = {
 hexunicode : {
     name: 'unicode to hex',
@@ -19,11 +19,38 @@ hexunicode : {
         return newText;
     },
     decode: function (text) {
-        return text = text.replace(/\\u[0-9a-f]{3,4}/gi, function (match) { return String.fromCharCode(parseInt(match.substring(2), 16)); });
+        return text.replace(/\\(?:u|x)[0-9a-f]{2,4}/gi, function (match) { return String.fromCharCode(parseInt(match.substring(2), 16)); });
     },
     guess: function (text) {
         if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text) }
         else { return this.encode(text) }
+    }
+},
+
+fixKBlayout: {
+    name: 'Fix keyboard layout',
+    help: 'Fixes invalid keyboard layout for Cyrillic/Latin letters.',
+    RUS: "\u0451\u0401!\"\u2116;%:?\u0439\u0446\u0443\u043a\u0435\u043d\u0433\u0448\u0449\u0437\u0445\u044a\u0444\u044b\u0432\u0430\u043f\u0440\u043e\u043b\u0434\u0436\u044d\u044f\u0447\u0441\u043c\u0438\u0442\u044c\u0431\u044e.\u0419\u0426\u0423\u041a\u0415\u041d\u0413\u0428\u0429\u0417\u0425\u042a\u0424\u042b\u0412\u0410\u041f\u0420\u041e\u041b\u0414\u0416\u042d/\u042f\u0427\u0421\u041c\u0418\u0422\u042c\u0411\u042e,",
+    ENG: "`~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
+    encode: function(text) { 
+        var c = '';
+        for (var i = 0; i < text.length; i++) {
+            var j = this.ENG.indexOf(text.charAt(i));
+            c += (j < 0) ? text.charAt(i) : this.RUS.charAt(j);
+        }
+        return c;
+    },
+    decode: function(text) { 
+        var c = '';
+        for (var i = 0; i < text.length; i++) {
+            var j = this.RUS.indexOf(text.charAt(i));
+            c += (j < 0) ? text.charAt(i) : this.ENG.charAt(j);
+        }
+        return c;
+    },
+    guess: function (text) {
+        if (this.RUS.indexOf(text.charAt(1)) == -1) return this.encode(text);
+        else return this.decode(text); 
     }
 },
 
@@ -68,16 +95,6 @@ REGEXESC : {
     guess: function (text) {
         if (text.match(/(?:\\)([[\]{}()*+?.\\^$|#\s])/)) { return this.decode(text) }
         else { return this.encode(text) }
-    }
-},
-
-reverse: {
-    name: 'reverse',
-    help: 'Reverses string lettering. For example Test becomes tseT and the other way.',
-    encode: function(text) { return text.split("").reverse().join("") },
-    decode: function(text) { return this.encode(text) },
-    guess: function (text) {
-        return this.encode(text);
     }
 },
 
@@ -1114,5 +1131,16 @@ bookmarklet: {
 
         return code;
     }
-}
+},
+
+reverse: {
+    name: 'reverse',
+    help: 'Reverses string lettering. For example Test becomes tseT and the other way.',
+    encode: function(text) { return text.split("").reverse().join("") },
+    decode: function(text) { return this.encode(text) },
+    guess: function (text) {
+        return this.encode(text);
+    }
+},
+
 } /* METHODS*/
