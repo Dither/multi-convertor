@@ -155,7 +155,7 @@ decode: function(text) {
      return tmp_arr.join('');
 },
 guess: function (text) {
-     if (text.match(/\u00d1|\u00c1|\u00c2|\u00c3|\u00c9|\u00cd|\u00d3|\u00da|\u00dc|\u00f1|\u00e1|\u00e9|\u00ed|\u00f3|\u00fa|\u00fc/)) { return this.decode(text) }
+     if (text.match(/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/)) { return this.decode(text) }
      else { return this.encode(text) }
 }
 },
