@@ -1,7 +1,7 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<widget xmlns="http://www.w3.org/ns/widgets" id="http://my.opera.com/DitherSky/blog/my-modifications-of-extensions" version="1.03b">
+<widget xmlns="http://www.w3.org/ns/widgets" id="http://my.opera.com/DitherSky/blog/my-modifications-of-extensions" version="1.04">
   <name>MultiConvertor</name>
-  <author href="http://my.opera.com/DitherSky/blog/">DitherSky</author>
+  <author href="http://my.opera.com/DitherSky/blog/">Dither</author>
   <icon src="icons/icon.gif"/>
-  <!--<credit>icon.png by Iconfinder - non-comercial free license.</credit> -->
+  <!--<credit>icon.png from Iconfinder - non-comercial free license.</credit> -->
 </widget>

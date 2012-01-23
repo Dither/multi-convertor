@@ -1,8 +1,5 @@
 // Opera specific
-function selText(w) {
-    var t;
-    return w ? w.document.getSelection() || (t = w.opera.lastClick && w.opera.lastClick.textArea) && t.value.substring(t.selectionStart, t.selectionEnd) : ''
-};
+function selText(w) { var t; return w ? w.document.getSelection() || (t = w.opera.lastClick && w.opera.lastClick.textArea) && t.value.substring(t.selectionStart, t.selectionEnd) : '' };
 
 var background;
 opera.extension.onmessage = function( event ){

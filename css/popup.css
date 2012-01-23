@@ -15,6 +15,7 @@ textarea {
 margin-bottom:7px;
 font-family: "consolas", "Terminus", "lucida console", "courier new", "courier", monospace;
 font-size: 12px;
+height: 350px !important;
 }
 
 br {
