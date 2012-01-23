@@ -1,5 +1,5 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
-<widget xmlns="http://www.w3.org/ns/widgets" id="http://my.opera.com/DitherSky/blog/my-modifications-of-extensions" version="1.04">
+<?xml version='1.0' encoding='utf-8'?>
+<widget xmlns="http://www.w3.org/ns/widgets" id="http://my.opera.com/DitherSky/blog/my-modifications-of-extensions" version="1.06">
   <name>MultiConvertor</name>
   <author href="http://my.opera.com/DitherSky/blog/">Dither</author>
   <icon src="icons/icon.gif"/>

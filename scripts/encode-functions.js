@@ -375,6 +375,179 @@ encode: function (str) {
 },
 },
 
+RUS2TRANSLIT : {
+name: 'russian to translit',
+help: 'The metod converts russian to translit using MVD site variant.',
+decode: function(text)
+{
+var latD = new Object(); // Array
+var rusD = new Object(); // Array
+
+latD['a'] = ['\u044b+', '\u0419+', '\u042b+', '\u0439+', '\u042b', '\u0439', '\u044b', '\u0419', '', ''];
+rusD['a'] = ['\u044b\u0430', '\u0419\u0430', '\u042b\u0430', '\u0439\u0430', '\u042f', '\u044f', '\u044f', '\u042f', '\u0430', 'a'];
+
+latD['b'] = ['', ''];
+rusD['b'] = ['\u0431', 'b'];
+
+latD['v'] = ['', ''];
+rusD['v'] = ['\u0432', 'v'];
+
+latD['g'] = ['', ''];
+rusD['g'] = ['\u0433', 'g'];
+
+latD['d'] = ['', ''];
+rusD['d'] = ['\u0434', 'd'];
+
+latD['e'] = ['\u044b+', '\u044b+', '\u0419+', '\u0419+', '\u042b+', '\u042b+', '\u0439+', '\u0439+', '\u0439', '\u044b', '\u0419', '\u042b', '', '', ''];
+rusD['e'] = ['\u044b\u044d', '\u044b\u0435', '\u0419\u0435', '\u0419\u044d', '\u042b\u044d', '\u042b\u0435', '\u0439\u044d', '\u0439\u0435', '\u0451', '\u0451', '\u0401', '\u0401', '\u0435', '\u044d', 'e'];
+
+latD['o'] = ['\u044b+', '\u0419+', '\u042b+', '\u0439+', '\u042b', '\u044b', '\u0419', '\u0439', '', ''];
+rusD['o'] = ['\u044b\u043e', '\u0419\u043e', '\u042b\u043e', '\u0439\u043e', '\u0401', '\u0451', '\u0401', '\u0451', '\u043e', 'o'];
+
+latD['h'] = ['\u0441hc+', '\u0421hc+', '\u0428c+', '\u0441hc', '\u0448c+', '\u0421hc', 'c+', '\u0441+', '\u041a+', '\u0421+', 'C+', '\u043a+', '\u0417+', '\u0428c', '\u0448c', '\u0437+', '\u0441', 'c', '\u043a', '\u041a', '\u0437', '\u0421', 'C', '\u0417', ''];
+rusD['h'] = ['\u0441hch', '\u0421hch', '\u0428ch', '\u0449', '\u0448ch', '\u0429', 'ch', '\u0441h', '\u041ah', '\u0421h', 'Ch', '\u043ah', '\u0417h', '\u0429', '\u0449', '\u0437h', '\u0448', '\u0447', '\u0445', '\u0425', '\u0436', '\u0428', '\u0427', '\u0416', 'h'];
+
+latD['z'] = ['', ''];
+rusD['z'] = ['\u0437', 'z'];
+
+latD['i'] = ['\u044b+', '\u0419+', '\u042b+', '\u0439+', '\u042b', '\u0439', '\u044b', '\u0419', '', ''];
+rusD['i'] = ['\u044b\u0438', '\u0419\u0438', '\u042b\u0438', '\u0439\u0438', '\u0418', '\u0438', '\u0438', '\u0418', '\u0438', 'i'];
+
+latD['y'] = ['', '', ''];
+rusD['y'] = ['\u044b', '\u0439', 'y'];
+
+latD['k'] = ['', ''];
+rusD['k'] = ['\u043a', 'k'];
+
+latD['l'] = ['', ''];
+rusD['l'] = ['\u043b', 'l'];
+
+latD['m'] = ['', ''];
+rusD['m'] = ['\u043c', 'm'];
+
+latD['n'] = ['', ''];
+rusD['n'] = ['\u043d', 'n'];
+
+latD['p'] = ['', ''];
+rusD['p'] = ['\u043f', 'p'];
+
+latD['r'] = ['', ''];
+rusD['r'] = ['\u0440', 'r'];
+
+latD['s'] = ['\u0422+', '\u0442+', '\u0422', '\u0442', '', ''];
+rusD['s'] = ['\u0422\u0441', '\u0442\u0441', '\u0426', '\u0446', '\u0441', 's'];
+
+latD['t'] = ['', ''];
+rusD['t'] = ['\u0442', 't'];
+
+latD['u'] = ['\u044b+', '\u0419+', '\u042b+', '\u0439+', '\u042b', '\u0439', '\u044b', '\u0419', '', ''];
+rusD['u'] = ['\u044b\u0443', '\u0419\u0443', '\u042b\u0443', '\u0439\u0443', '\u042e', '\u044e', '\u044e', '\u042e', '\u0443', 'u'];
+
+latD['f'] = ['', ''];
+rusD['f'] = ['\u0444', 'f'];
+
+latD['\"'] = ['\u044a+', '\u044a', '', ''];
+rusD['\"'] = ['\u044a\u044a', '\u042a', '\u044a', '\"'];
+
+latD['\''] = ['\u044c+', '\u044c', '', ''];
+rusD['\''] = ['\u044c\u044c', '\u042c', '\u044c', '\''];
+
+latD['A'] = ['\u042b+', '\u0419+', '\u042b', '\u0419', '', ''];
+rusD['A'] = ['\u042b\u0410', '\u0419\u0410', '\u042f', '\u042f', '\u0410', 'A'];
+
+latD['B'] = ['', ''];
+rusD['B'] = ['\u0411', 'B'];
+
+latD['V'] = ['', ''];
+rusD['V'] = ['\u0412', 'V'];
+
+latD['G'] = ['', ''];
+rusD['G'] = ['\u0413', 'G'];
+
+latD['D'] = ['', ''];
+rusD['D'] = ['\u0414', 'D'];
+
+latD['E'] = ['\u042b+', '\u042b+', '\u0419+', '\u0419+', '\u042b', '\u0419', '', '', ''];
+rusD['E'] = ['\u042b\u042d', '\u042b\u0415', '\u0419\u042d', '\u0419\u0415', '\u0401', '\u0401', '\u042d', '\u0415', 'E'];
+
+latD['O'] = ['\u042b+', '\u0419+', '\u042b', '\u0419', '', ''];
+rusD['O'] = ['\u042b\u041e', '\u0419\u041e', '\u0401', '\u0401', '\u041e', 'O'];
+
+latD['H'] = ['\u0421HC+', '\u0421HC', '\u0428C+', 'C+', '\u0421+', '\u041a+', '\u0428C', '\u0417+', '\u041a', 'C', '\u0421', '\u0417', ''];
+rusD['H'] = ['\u0421HCH', '\u0429', '\u0428CH', 'CH', '\u0421H', '\u041aH', '\u0429', '\u0417H', '\u0425', '\u0427', '\u0428', '\u0416', 'H'];
+
+latD['Z'] = ['', ''];
+rusD['Z'] = ['\u0417', 'Z'];
+
+latD['I'] = ['\u042b+', '\u0419+', '\u042b', '\u0419', '', ''];
+rusD['I'] = ['\u042b\u0418', '\u0419\u0418', '\u0418', '\u0418', '\u0418', 'I'];
+
+latD['Y'] = ['', '', ''];
+rusD['Y'] = ['\u042b', '\u0419', 'Y'];
+
+latD['K'] = ['', ''];
+rusD['K'] = ['\u041a', 'K'];
+
+latD['L'] = ['', ''];
+rusD['L'] = ['\u041b', 'L'];
+
+latD['M'] = ['', ''];
+rusD['M'] = ['\u041c', 'M'];
+
+latD['N'] = ['', ''];
+rusD['N'] = ['\u041d', 'N'];
+
+latD['P'] = ['', ''];
+rusD['P'] = ['\u041f', 'P'];
+
+latD['R'] = ['', ''];
+rusD['R'] = ['\u0420', 'R'];
+
+latD['S'] = ['\u0422+', '\u0422', '', ''];
+rusD['S'] = ['\u0422\u0421', '\u0426', '\u0421', 'S'];
+
+latD['T'] = ['', ''];
+rusD['T'] = ['\u0422', 'T'];
+
+latD['U'] = ['\u042b+', '\u0419+', '\u042b', '\u0419', '', ''];
+rusD['U'] = ['\u042b\u0423', '\u0419\u0423', '\u042e', '\u042e', '\u0423', 'U'];
+
+latD['F'] = ['', ''];
+rusD['F'] = ['\u0424', 'F'];
+
+    function untranslit(text) {
+    	var before = text.substr(0, text.length - 1);
+    	var last = text.substr(text.length - 1, 1);
+    	var lat = latD[last];
+    	var rus = rusD[last];
+    	if (lat) {
+    		for (var nchar = 0; nchar < lat.length; nchar++) {
+    			var pos = before.length > lat[nchar].length ? (before.length - lat[nchar].length) : 0;
+    			if (lat[nchar] == before.substr(pos, before.length - pos)) { return before.substr(0, before.length - lat[nchar].length) + rus[nchar]; }
+    		}
+    	}
+    	return text;
+    }
+    
+    var trans="";
+    for (var nchar=0;nchar<text.length;nchar++) trans = untranslit(trans+text.substr(nchar,1));
+    return trans;
+},
+
+encode : function(text) {
+    var trTBL = {'\u0430':'a', '\u0431':'b', '\u0432':'v', '\u0433':'g', '\u0434':'d', '\u0435':'e', '\u0451':'ye', '\u0436':'zh', '\u0437':'z', '\u0438':'i', '\u0439':'y', '\u043a':'k', '\u043b':'l', '\u043c':'m', '\u043d':'n', '\u043e':'o', '\u043f':'p', '\u0440':'r', '\u0441':'s', '\u0442':'t', '\u0443':'u', '\u0444':'f', '\u0445':'kh', '\u0446':'ts', '\u0447':'ch', '\u0448':'sh', '\u0449':'shch', '\u044a':'\"', '\u044b':'y', '\u044c':'\'', '\u044d':'e', '\u044e':'yu', '\u044f':'ya', '\u0410':'A', '\u0411':'B', '\u0412':'V', '\u0413':'G', '\u0414':'D', '\u0415':'E', '\u0401':'Ye', '\u0416':'Zh', '\u0417':'Z', '\u0418':'I', '\u0419':'Y', '\u041a':'K', '\u041b':'L', '\u041c':'M', '\u041d':'N', '\u041e':'O', '\u041f':'P', '\u0420':'R', '\u0421':'S', '\u0422':'T', '\u0423':'U', '\u0424':'F', '\u0425':'Kh', '\u0426':'Ts', '\u0427':'Ch', '\u0428':'Sh', '\u0429':'Shch', '\u042a':'\"\"', '\u042b':'Y', '\u042c':'\'\'', '\u042d':'E', '\u042e':'Yu', '\u042f':'Ya' };
+    function translit(symb) { return trTBL[symb] ? trTBL[symb] : symb; }
+    
+    var trans="";
+    for (var n=0;n<text.length;n++) trans += translit(text.substr(n,1));
+    return trans;
+},
+guess: function (text) {
+     if (text.match(/[\u0430-\u044f\u0410-\u042f]+/i)) { return this.encode(text) }
+     else { return this.decode(text) }
+}
+},
+
 HTMLspecialchars : {
 name: 'HTML special chars',
 help: 'Method converts HTML special characters to their HTML representation. Decoding function reverts that.',
