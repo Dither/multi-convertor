@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MultiConvertor</title>
+<title>MultiConvertor [popup]</title>
 <meta http-equiv="pragma" content="no-cache" />
 <meta http-equiv="cache-control" content="no-store, no-cache, must-revalidate" />
 <link rel='stylesheet' href='css/popup.css' />
@@ -41,31 +41,33 @@ function getHelp() {
 }
 
 // Opera specific
-function log(){ opera.postError(Array.prototype.slice.call(arguments))};
-var theport;
-function onMessageHandler(event) {
-    //log('[MultiConvertor]: the popup.html onMessageHandler received: ' + event.data.type);
-    switch (event.data.type) {
-    case 'give-url':
-    case 'give-selection':
-        document.getElementById('inputtext').value = event.data.text;
-        break;
-    default:
+if (window.opera !== undefined) {
+    function log(){ opera.postError(Array.prototype.slice.call(arguments))};
+    var theport;
+    function onMessageHandler(event) {
+        //log('[MultiConvertor]: the popup.html onMessageHandler received: ' + event.data.type);
+        switch (event.data.type) {
+        case 'give-url':
+        case 'give-selection':
+            document.getElementById('inputtext').value = event.data.text;
+            break;
+        default:
+        }
+        document.getElementById('inputtext').focus();
     }
-    document.getElementById('inputtext').focus();
-}
-
-function sendMessage(message) {
-    if (theport && message) theport.postMessage(message);
-    //log('[MultiConvertor]: the popup.html sendMessage sent ' + message.type);
-}
-
-if (opera.extension) opera.extension.onmessage = function (event) {
-    if (event.data == "send_tab_port") {
-        if (event.ports.length > 0) {
-            theport = event.ports[0];
-            theport.onmessage = onMessageHandler;
-            //log('[MultiConvertor]: the popup.html received port ' + theport);
+    
+    function sendMessage(message) {
+        if (theport && message) theport.postMessage(message);
+        //log('[MultiConvertor]: the popup.html sendMessage sent ' + message.type);
+    }
+    
+    if (opera.extension) opera.extension.onmessage = function (event) {
+        if (event.data == "send_tab_port") {
+            if (event.ports.length > 0) {
+                theport = event.ports[0];
+                theport.onmessage = onMessageHandler;
+                //log('[MultiConvertor]: the popup.html received port ' + theport);
+            }
         }
     }
 }

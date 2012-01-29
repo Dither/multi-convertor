@@ -3,6 +3,13 @@
 // Project uses code parts from GPL/MIT projects such as phpjs.org. 
 // Thanks to orighinal authors for advancing this small world to a better future.
 
+// Service functions
+
+var inArray = function(needle) {
+	for(var i = 0, l = this.length; i < l; i++) if(this[i] && this[i] === needle) return true;
+	return false;
+}
+
 var METHODS = {
 hexunicode : {
     name: 'unicode to hex',
@@ -851,81 +858,105 @@ guess: function (text) {
 BASE64 : {
     name: 'base64',
     help: 'Method encodes a text as base64 and the other way. (Partitial encodes unsupported)',
-    // Global lookup arrays for base64 conversions
-    enc64List : [], 
-    dec64List: [],
-    init: function() {  // Load the lookup arrays
-        this.enc64List = new Array();
-        this.dec64List = new Array();
-        var i;
-        for (i = 0; i < 26; i++) this.enc64List[this.enc64List.length] = String.fromCharCode(65 + i);
-        for (i = 0; i < 26; i++) this.enc64List[this.enc64List.length] = String.fromCharCode(97 + i);
-        for (i = 0; i < 10; i++) this.enc64List[this.enc64List.length] = String.fromCharCode(48 + i);
-        this.enc64List[this.enc64List.length] = "+";
-        this.enc64List[this.enc64List.length] = "/";
-        for (i = 0; i < 128; i++) this.dec64List[this.dec64List.length] = -1;
-        for (i = 0; i < 64; i++) this.dec64List[this.enc64List[i].charCodeAt(0)] = i;
-    },
-    encode: function (str) {
-        str = METHODS.UTF8.encode(str);
-        var c, d, e, end = 0;
-        var u, v, w, x;
-        var ptr = -1;
-        var input = str.split("");
-        var output = "";
-        while (end == 0) {
-            c = (typeof input[++ptr] != "undefined") ? input[ptr].charCodeAt(0) : ((end = 1) ? 0 : 0);
-            d = (typeof input[++ptr] != "undefined") ? input[ptr].charCodeAt(0) : ((end += 1) ? 0 : 0);
-            e = (typeof input[++ptr] != "undefined") ? input[ptr].charCodeAt(0) : ((end += 1) ? 0 : 0);
-            u = this.enc64List[c >> 2];
-            v = this.enc64List[(0x00000003 & c) << 4 | d >> 4];
-            w = this.enc64List[(0x0000000F & d) << 2 | e >> 6];
-            x = this.enc64List[e & 0x0000003F];
-
-            // handle padding to even out unevenly divisible string lengths
-            if (end >= 1) { x = "="; }
-            if (end == 2) { w = "="; }
-            if (end < 3) { output += u + v + w + x; }
-        }
-        // format for 76-character line lengths per RFC
-        var formattedOutput = "";
-        var lineLength = 76;
-        while (output.length > lineLength) {
-            formattedOutput += output.substring(0, lineLength) + '\n';
-            output = output.substring(lineLength);
-        }
-        formattedOutput += output;
-        return formattedOutput;
+    encode: function (data) {
+        // Encodes string using MIME base64 algorithm  
+        // 
+        // version: 1109.2015
+        // discuss at: http://phpjs.org/functions/base64_encode
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+            ac = 0,
+            enc = "",
+            tmp_arr = [];
+     
+        if (!data)
+            return data;
+     
+        data = METHODS.UTF8.encode(data + '');
+     
+        do { // pack three octets into four hexets
+            o1 = data.charCodeAt(i++);
+            o2 = data.charCodeAt(i++);
+            o3 = data.charCodeAt(i++);
+     
+            bits = o1 << 16 | o2 << 8 | o3;
+     
+            h1 = bits >> 18 & 0x3f;
+            h2 = bits >> 12 & 0x3f;
+            h3 = bits >> 6 & 0x3f;
+            h4 = bits & 0x3f;
+     
+            // use hexets to index into b64, and append result to encoded string
+            tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+        } while (i < data.length);
+     
+        enc = tmp_arr.join('');
+        
+        var r = data.length % 3;
+        
+        return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
     },
     decode: function (str) {
-        var c = 0, d = 0, e = 0, f = 0, i = 0, n = 0;
-        var input = str.split("");
-        var output = "";
-        var ptr = 0;
-        do {
-            f = input[ptr++].charCodeAt(0);
-            i = this.dec64List[f];
-            if (f >= 0 && f < 128 && i != -1) {
-                if (n % 4 == 0) {
-                    c = i << 2;
-                } else if (n % 4 == 1) {
-                    c = c | (i >> 4);
-                    d = (i & 0x0000000F) << 4;
-                } else if (n % 4 == 2) {
-                    d = d | (i >> 2);
-                    e = (i & 0x00000003) << 6;
-                } else {
-                    e = e | i;
-                }
-                n++;
-                if (n % 4 == 0) {
-                    output += String.fromCharCode(c) + String.fromCharCode(d) + String.fromCharCode(e);
-                }
+        // Encodes string using MIME base64 algorithm  
+        // 
+        // version: 1109.2015
+        // discuss at: http://phpjs.org/functions/base64_encode
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+            ac = 0,
+            dec = "",
+            tmp_arr = [],
+            splitters ='';
+     
+        if (!str)
+            return str;
+     
+        str += '';
+        
+        str.split('').forEach(function(name){
+            if(!inArray.call(b64, name) && splitters.indexOf(name) === -1) {
+                splitters += name;
             }
-        }
-        while (typeof input[ptr] != 'undefined');
-        output += (n % 4 == 3) ? String.fromCharCode(c) + String.fromCharCode(d) : ((n % 4 == 2) ? String.fromCharCode(c) : "");
-        return METHODS.UTF8.decode(output);
+        });
+        
+        splitters = '['+splitters+']';
+        var instrarray = str.split(new RegExp(splitters)).filter(function (element, index, array) {
+            return (element.length >= 4);
+        });
+        
+        instrarray.forEach(function(data){
+            if (data.length % 4 === 0) {
+                data = data.replace(/([^\=])\=\=?$/, '$1');
+            }
+            
+            if (data.length % 4 === 1) {
+                return;
+            }
+            do { // unpack four hexets into three octets using index points in b64
+                h1 = b64.indexOf(data.charAt(i++));
+                h2 = b64.indexOf(data.charAt(i++));
+                h3 = b64.indexOf(data.charAt(i++));
+                h4 = b64.indexOf(data.charAt(i++));
+         
+                bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+         
+                o1 = bits >> 16 & 0xff;
+                o2 = bits >> 8 & 0xff;
+                o3 = bits & 0xff;
+         
+                if (h3 == 64) {
+                    tmp_arr[ac++] = String.fromCharCode(o1);
+                } else if (h4 == 64) {
+                    tmp_arr[ac++] = String.fromCharCode(o1, o2);
+                } else {
+                    tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
+                }
+            } while (i < data.length);
+                 
+            dec += tmp_arr.join('');
+        });
+        
+        return METHODS.UTF8.decode(dec);
     },
     guess: function (text) {
          if (text.match(/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/i)) { return this.decode(text) }
