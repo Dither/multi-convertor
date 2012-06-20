@@ -1,4 +1,4 @@
-﻿* { 
+* { 
 margin: 0 0 0 0;
 padding: 0 0 0 0;
 }
@@ -6,6 +6,7 @@ body {
 font-size:14px;
 font-family: "arial", "helvetica", sans-serif;
 overflow:hidden;
+background: #f4f4f5;
 }
 fieldset{
 border: none;

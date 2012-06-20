@@ -12,8 +12,8 @@ var inArray = function(needle) {
 
 var METHODS = {
 hexunicode : {
-    name: 'unicode to hex',
-    help:  'The hexunicode method returns an encoded local codepage characters in \\uNNNN format. It will not encode Latin characters. Decoding function reverts that.',
+    name: 'JavaScript escape',
+    help:  'The JavaScript escape method returns an encoded local codepage characters in \\uNNNN format. It will not encode Latin characters. Decoding function reverts that.',
     encode: function (text) {
         if (!text) return;
         var newText = '';
@@ -33,8 +33,35 @@ hexunicode : {
         return text.replace(/\\(?:u|x)[0-9a-f]{2,4}/gi, function (match) { return String.fromCharCode(parseInt(match.substring(2), 16)); });
     },
     guess: function (text) {
-        if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text) }
-        else { return this.encode(text) }
+        if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text); }
+        else { return this.encode(text); }
+    }
+},
+
+decimalncr : {
+    name: 'CSS escape',
+    help:  'The CSS escape method returns an encoded local codepage characters in "\\NNNN " format. It will not encode Latin characters. Decoding function reverts that.',
+    encode: function (text) {
+        if (!text) return;
+        var newText = '';
+        var nulls = new Array('00', '0', '');
+        for (var i = 0; i < text.length; i++) {
+            var code = text.charCodeAt(i);
+            if (code <= 127) code = text.charAt(i);
+            else {
+                code = code.toString(10).toUpperCase();
+                code = '\\' + nulls[code.length - 2] + code + ' ';
+            }
+            newText += code;
+        }
+        return newText;
+    },
+    decode: function (text) {
+        return text.replace(/\\[0-9a-f]{2,4}\s/gi, function (match) { return String.fromCharCode(parseInt(match.substring(2), 16)); });
+    },
+    guess: function (text) {
+        if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text); }
+        else { return this.encode(text); }
     }
 },
 
@@ -68,44 +95,44 @@ fixKBlayout: {
 URI: {
     name: 'URI',
     help: 'Method returns an encoded URI. It will not encode ~!@#$&*()=:/,;?+\' Decoding returns the original string.',
-    encode: function (text) { return encodeURI(text) },
-    decode: function (text) { return decodeURI(text) },
+    encode: function (text) { return encodeURI(text); },
+    decode: function (text) { return decodeURI(text); },
     guess: function (text) {
-        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text) }
-        else { return this.encode(text) }
+        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text); }
+        else { return this.encode(text); }
     }
 },
 
 URIComponent : {
     name: 'URI component',
     help: 'Method returns an encoded URI component. It will not encode ~!*()\' Decoding returns the original string.',
-    encode: function (text) { return encodeURIComponent(text) },
-    decode: function (text) { return decodeURIComponent(text) },
+    encode: function (text) { return encodeURIComponent(text); },
+    decode: function (text) { return decodeURIComponent(text); },
     guess: function (text) {
-        if (text.match(/[@\#$&=:\/,;\?\+]+/)) { return this.encode(text) }
-        else { return this.decode(text) }
+        if (text.match(/[@\#$&=:\/,;\?\+]+/)) { return this.encode(text); }
+        else { return this.decode(text); }
     }
 },
 
 ESC : {
     name: 'escape',
     help: 'Method returns a string value (in Unicode format) where all spaces, punctuation, accented characters, and any other non-ASCII characters except @*/+ are replaced with %xx encoding, where xx is equivalent to the hexadecimal number representing the character. For example, a space is returned as "%20." Decoding returns the original string.',
-    encode: function (text) { return escape(text) },
-    decode: function (text) { return unescape(text) },
+    encode: function (text) { return escape(text); },
+    decode: function (text) { return unescape(text); },
     guess: function (text) {
-        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text) }
-        else { return this.encode(text) }
+        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text); }
+        else { return this.encode(text); }
     }
 },
 
 REGEXESC : {
     name: 'RegExp escape',
     help: 'Method escapes a minimal set of characters (\ * + ? | { } [ ] ( ) ^ $ . # and white spaces) by replacing them with their escape codes. This instructs the regular expression engine to interpret these characters literally rather than as metacharacters. Decoding function reverts that.',
-    encode: function (text) { return text.replace(/[[\]{}()*+?.\\^$|#\s]/g, "\\$&") },
-    decode: function (text) { return text.replace(/(?:\\)([[\]{}()*+?.\\^$|#\s])/g, "$1") },
+    encode: function (text) { return text.replace(/[[\]{}()*+?.\\^$|#\s]/g, "\\$&"); },
+    decode: function (text) { return text.replace(/(?:\\)([[\]{}()*+?.\\^$|#\s])/g, "$1"); },
     guess: function (text) {
-        if (text.match(/(?:\\)([[\]{}()*+?.\\^$|#\s])/)) { return this.decode(text) }
-        else { return this.encode(text) }
+        if (text.match(/(?:\\)([[\]{}()*+?.\\^$|#\s])/)) { return this.decode(text); }
+        else { return this.encode(text); }
     }
 },
 
@@ -166,8 +193,8 @@ decode: function(text) {
      return tmp_arr.join('');
 },
 guess: function (text) {
-     if (text.match(/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/)) { return this.decode(text) }
-     else { return this.encode(text) }
+     if (text.match(/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/)) { return this.decode(text); }
+     else { return this.encode(text); }
 }
 },
 
@@ -383,7 +410,7 @@ encode: function (str) {
 },
 
 RUS2TRANSLIT : {
-name: 'russian to translit',
+name: 'Russian to translit',
 help: 'The metod converts russian to translit using MVD site variant.',
 decode: function(text)
 {
@@ -550,8 +577,8 @@ encode : function(text) {
     return trans;
 },
 guess: function (text) {
-     if (text.match(/[\u0430-\u044f\u0410-\u042f]+/i)) { return this.encode(text) }
-     else { return this.decode(text) }
+     if (text.match(/[\u0430-\u044f\u0410-\u042f]+/i)) { return this.encode(text); }
+     else { return this.decode(text); }
 }
 },
 
@@ -650,8 +677,8 @@ decode: function  (string) {
     return string;
 },
 guess: function (text) {
-     if (text.match(/&\#|&\w+;/)) { return this.decode(text) }
-     else { return this.encode(text) }
+     if (text.match(/&\#|&\w+;/)) { return this.decode(text); }
+     else { return this.encode(text); }
 }
 },
 
@@ -850,14 +877,14 @@ decode: function(string) {
     return tmp_str;
 },
 guess: function (text) {
-     if (text.match(/&\#|&\w+;/)) { return this.decode(text) }
-     else { return this.encode(text) }
+     if (text.match(/&\#|&\w+;/)) { return this.decode(text); }
+     else { return this.encode(text); }
 }
 },
 
 BASE64 : {
     name: 'base64',
-    help: 'Method encodes a text as base64 and the other way. (Partitial encodes unsupported)',
+    help: 'Method encodes a text as base64 and the other way. Partitial encodes supported poorly.',
     encode: function (data) {
         // Encodes string using MIME base64 algorithm  
         // 
@@ -959,8 +986,8 @@ BASE64 : {
         return METHODS.UTF8.decode(dec);
     },
     guess: function (text) {
-         if (text.match(/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/i)) { return this.decode(text) }
-         else { return this.encode(text) }
+         if (text.match(/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/i)) { return this.decode(text); }
+         else { return this.encode(text); }
     }
 },
 
@@ -1195,10 +1222,11 @@ rot13 : {
         var inArray = function(needle) {
             for(var i = 0, l = this.length; i < l; i++) if(this[i] == needle) return true;
             return false;
-        }
+        };
         
         for (var cd, i = 0; i < text.length; ++i) {
             // to restore text we need rotate to 20 for russian and 13 for english
+            // russian is just for fun it is only reversible with same operation in english
             rot = inArray.call(this.alpha, text[i].toLowerCase()) ? 20 : 13;
             if (cd = this.rotate(text[i], rot)) res += cd;
             else res += text[i];
@@ -1211,7 +1239,7 @@ rot13 : {
 },
 
 timestamp: {
-    name: 'timestamp to date',
+    name: 'Timestamp to date',
     help: 'Method converts unix epoch to human readable date.',
     encode: function(text) {
         if (!text) return;
@@ -1250,13 +1278,12 @@ timestamp: {
 
 
 reverse: {
-    name: 'reverse',
+    name: 'Reverse',
     help: 'Method reverses string lettering. For example Test becomes tseT and the other way.',
-    encode: function(text) { return text.split("").reverse().join("") },
-    decode: function(text) { return this.encode(text) },
+    encode: function(text) { return text.split("").reverse().join(""); },
+    decode: function(text) { return this.encode(text); },
     guess: function (text) {
         return this.encode(text); // most promising one ^_^
     }
-},
-
-} /* METHODS*/
+}
+}; /* METHODS*/
