@@ -1,68 +1,96 @@
-* { 
-margin: 0 0 0 0;
-padding: 0 0 0 0;
-}
-body {
-font-size:14px;
-font-family: "arial", "helvetica", sans-serif;
-overflow:hidden;
-background: #f4f4f5;
-}
-fieldset{
-border: none;
+html {
+    height: 460px;
+    width: 620px;
 }
 
-textarea { 
-margin-bottom:7px;
-font-family: "consolas", "Terminus", "lucida console", "courier new", "courier", monospace;
-font-size: 12px;
-height: 350px !important;
+_:-moz-tree-row(hover), html {
+    padding-top: 10px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    font-family: "arial", "helvetica", sans-serif;
+    overflow: hidden;
+}
+
+fieldset {
+    border: none;
+    margin: 0;
+}
+
+textarea {
+    padding: 3px;
+    margin-bottom: 10px;
+    font-family: "consolas", "Terminus", "lucida console", "courier new", "courier", monospace;
+    font-size: 12px;
+    height: 350px;
 }
 
 br {
-clear:both;
+    clear: both;
+}
+
+select,
+button {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-bottom-color: #999;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-left-color: #ccc;
+    border-left-style: solid;
+    border-left-width: 1px;
+    border-right-color: #999;
+    border-right-style: solid;
+    border-right-width: 1px;
+    border-top-color: #ccc;
+    border-top-style: solid;
+    border-top-width: 1px;
+    cursor: pointer;
+    vertical-align: middle;
+    font-family: "consolas", "Terminus", "lucida console", "courier new", "courier", monospace;
+    font-size: 12px;
+    overflow: hidden;
+}
+
+select {
+    height: 27px;
+    padding-left: 5px;
+    padding-right: 1px;
+    min-width: 50px;
 }
 
 button {
-background:#eee;
-padding-top:5px;
-padding-bottom:5px;
-border-bottom-color:#999;
-border-bottom-style:solid;
-border-bottom-width:1px;
-border-left-color:#ccc;
-border-left-style:solid;
-border-left-width:1px;
-border-right-color:#999;
-border-right-style:solid;
-border-right-width:1px;
-border-top-color:#ccc;
-border-top-style:solid;
-border-top-width:1px;
-cursor:pointer;
-margin-top:2px;
-vertical-align: middle;
+    background: #eee;
+    height: 27px;
 }
 
 .toolbtn {
-margin-left: 5px;
-margin-top: 0px;
-padding-top: 2px;
-padding-bottom:2px;
-display:inline-block;
-width:50px;
+    margin-left: 5px;
+    margin-top: 0;
+    display: inline-block;
+    width: 50px;
 }
 
-#encode{
-display:block;
-width:596px;
+#encode {
+    display: block;
+    height: 33px;
+    width: 600px;
 }
 
 #spanmethod {
-float: left;
-}
-#spandirection {
-float: right;
+    float: left;
+    margin-right: 10px;    
 }
 
-#encode:lang(ru){content: 'Перекодировать';/*Convert*/}
+#spandirection {
+    float: right;
+    margin-left: 5px;
+}
+
+#encode:lang(ru) {
+    content: 'Перекодировать';
+    /*Convert*/
+}

@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "MultiConvertor",
+  "version": "1.0.8",
+  "icons": {
+    "48": "icons/icon.png"
+  },
+  "description": "Do most common web programmer's conversions with ease.",
+  "content_scripts": [
+    {
+        "matches": ["http://*/*", "https://*/*"],
+        "js": ["includes/multi-convertor.js"],
+        "run_at": "document_start",
+        "all_frames":true
+    }
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "background": {
+    "page": "index.html"
+  },
+  "browser_action": {
+        "default_title": "MultiConvertor",
+        "default_icon": "icons/icon16.png",
+        "default_popup": "popup.html"
+  },
+  "applications": {
+    "gecko": {
+      "id": "multi-convertor@mozilla.firefox"
+    }
+  }
+}

@@ -1,13 +1,20 @@
 // Code below supposed to be browser independent.
 
-// Project uses code parts from GPL/MIT projects such as phpjs.org. 
+// Project uses code parts from GPL/MIT projects such as phpjs.org.
 // Thanks to orighinal authors for advancing this small world to a better future.
 
 // Service functions
 
-var inArray = function(needle) {
-	for(var i = 0, l = this.length; i < l; i++) if(this[i] && this[i] === needle) return true;
+function inArray(arr, needle) {
+	for (var i = 0, l = arr.length; i < l; i++) if(arr[i] && arr[i] === needle) return true;
 	return false;
+}
+
+function unique(arr) {
+    var i, out = [], obj = {};
+    for (i = 0, len = arr.length; i < len; i++) obj[arr[i]] = 0;
+    for (i in obj) out.push(i);
+    return out;
 }
 
 var METHODS = {
@@ -41,27 +48,51 @@ hexunicode : {
 decimalncr : {
     name: 'CSS escape',
     help:  'The CSS escape method returns an encoded local codepage characters in "\\NNNN " format. It will not encode Latin characters. Decoding function reverts that.',
-    encode: function (text) {
-        if (!text) return;
-        var newText = '';
-        var nulls = new Array('00', '0', '');
-        for (var i = 0; i < text.length; i++) {
-            var code = text.charCodeAt(i);
-            if (code <= 127) code = text.charAt(i);
-            else {
-                code = code.toString(10).toUpperCase();
-                code = '\\' + nulls[code.length - 2] + code + ' ';
+    encode: function (string) {
+        if (!string) return;
+        var output = '',
+            counter = 0,
+            length = string.length,
+            value,
+            character,
+            codePoint,
+            extra;
+
+        while (counter < length) {
+            character = string.charAt(counter++);
+            codePoint = character.charCodeAt();
+            // if it’s not a printable ASCII character
+            if (codePoint < 0x20 || codePoint > 0x7E) {
+                if (codePoint >= 0xD800 && codePoint <= 0xDBFF && counter < length) {
+                    // high surrogate, and there is a next character
+                    extra = string.charCodeAt(counter++);
+                    if ((extra & 0xFC00) == 0xDC00) { // next character is low surrogate
+                        codePoint = ((codePoint & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000;
+                    } else {
+                        counter--;
+                    }
+                }
+                value = '\\' + codePoint.toString(16).toUpperCase() + ' ';
+            } else {
+                if (/[\t\n\f\r\x0B:]/.test(character)) {
+                    value = '\\' + codePoint.toString(16).toUpperCase() + ' ';
+                } else if (character == '\\') {
+                    value = '\\' + character;
+                } else {
+                    value = character;
+                }
             }
-            newText += code;
+            output += value;
         }
-        return newText;
+        return output;
     },
     decode: function (text) {
-        return text.replace(/\\[0-9a-f]{2,4}\s/gi, function (match) { return String.fromCharCode(parseInt(match.substring(2), 16)); });
+        return text.replace(/\\[0-9a-f]{1,4} /gi, function (match) { return String.fromCharCode(parseInt(match.substring(1), 16)); });
     },
     guess: function (text) {
-        if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text); }
-        else { return this.encode(text); }
+        var test = text.match(/\\[0-9a-f]{3,4} /i);
+        if (!test || !test[0]) { return this.encode(text); }
+        else { return this.decode(text); }
     }
 },
 
@@ -70,7 +101,7 @@ fixKBlayout: {
     help: 'Fixes invalid keyboard layout for Cyrillic/Latin letters.',
     RUS: "\u0451\u0401!\"\u2116;%:?\u0439\u0446\u0443\u043a\u0435\u043d\u0433\u0448\u0449\u0437\u0445\u044a\u0444\u044b\u0432\u0430\u043f\u0440\u043e\u043b\u0434\u0436\u044d\u044f\u0447\u0441\u043c\u0438\u0442\u044c\u0431\u044e.\u0419\u0426\u0423\u041a\u0415\u041d\u0413\u0428\u0429\u0417\u0425\u042a\u0424\u042b\u0412\u0410\u041f\u0420\u041e\u041b\u0414\u0416\u042d/\u042f\u0427\u0421\u041c\u0418\u0422\u042c\u0411\u042e,",
     ENG: "`~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
-    encode: function(text) { 
+    encode: function(text) {
         var c = '';
         for (var i = 0; i < text.length; i++) {
             var j = this.ENG.indexOf(text.charAt(i));
@@ -78,7 +109,7 @@ fixKBlayout: {
         }
         return c;
     },
-    decode: function(text) { 
+    decode: function(text) {
         var c = '';
         for (var i = 0; i < text.length; i++) {
             var j = this.RUS.indexOf(text.charAt(i));
@@ -87,8 +118,8 @@ fixKBlayout: {
         return c;
     },
     guess: function (text) {
-        if (this.RUS.indexOf(text.charAt(1)) == -1) return this.encode(text);
-        else return this.decode(text); 
+        if (this.RUS.indexOf(text.charAt(1)) === -1) return this.encode(text);
+        else return this.decode(text);
     }
 },
 
@@ -98,8 +129,9 @@ URI: {
     encode: function (text) { return encodeURI(text); },
     decode: function (text) { return decodeURI(text); },
     guess: function (text) {
-        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text); }
-        else { return this.encode(text); }
+        var test = text.match(/(?:%\d{2})|(?:%u\d{3,4})/i);
+        if (!test || !test[0]) { return this.encode(text); }
+        else { return this.decode(text); }
     }
 },
 
@@ -109,8 +141,9 @@ URIComponent : {
     encode: function (text) { return encodeURIComponent(text); },
     decode: function (text) { return decodeURIComponent(text); },
     guess: function (text) {
-        if (text.match(/[@\#$&=:\/,;\?\+]+/)) { return this.encode(text); }
-        else { return this.decode(text); }
+        var test = text.match(/[@\#$&=:\/,;\?\+]+/);//
+        if (!test || !test[0]) { return this.decode(text); }
+        else { return this.encode(text); }
     }
 },
 
@@ -120,19 +153,29 @@ ESC : {
     encode: function (text) { return escape(text); },
     decode: function (text) { return unescape(text); },
     guess: function (text) {
-        if (text.match(/(?:%\d{2})|(?:%u\d{3,4})/i)) { return this.decode(text); }
-        else { return this.encode(text); }
+        var test = text.match(/(?:%\d{2})|(?:%u\d{3,4})/i);
+        if (!test || !test[0]) { return this.encode(text); }
+        else { return this.decode(text); }
     }
 },
 
 REGEXESC : {
     name: 'RegExp escape',
-    help: 'Method escapes a minimal set of characters (\ * + ? | { } [ ] ( ) ^ $ . # and white spaces) by replacing them with their escape codes. This instructs the regular expression engine to interpret these characters literally rather than as metacharacters. Decoding function reverts that.',
-    encode: function (text) { return text.replace(/[[\]{}()*+?.\\^$|#\s]/g, "\\$&"); },
-    decode: function (text) { return text.replace(/(?:\\)([[\]{}()*+?.\\^$|#\s])/g, "$1"); },
+    help: 'Method escapes a minimal set of characters (\ * + ? | { } [ ] ( ) ^ $ . #) by replacing them with their escapes. This instructs the regular expression engine to interpret these characters literally rather than as metacharacters. Decoding function reverts that.',
+    encode: function (text) {
+         text = text.replace(/[[\]{}()*+?.\\^$|#]/g, "\\$&");
+         text = text.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+         return text;
+    },
+    decode: function (text) {
+        text = text.replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t');
+        text = text.replace(/(?:\\)([[\]{}()*+?.\\^$|#])/g, "$1");
+        return text;
+    },
     guess: function (text) {
-        if (text.match(/(?:\\)([[\]{}()*+?.\\^$|#\s])/)) { return this.decode(text); }
-        else { return this.encode(text); }
+        var test = text.match(/(?:\\)([[\]{}()*+?.\\^$|#\s])/);
+        if (!test || !test[0]) { return this.encode(text); }
+        else { return this.decode(text); }
     }
 },
 
@@ -143,14 +186,14 @@ encode: function(text) {
     var string = (text + ''); // .replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     var utftext = "",
         start, end, stringl = 0;
- 
+
     start = end = 0;
     stringl = string.length;
     for (var n = 0; n < stringl; n++) {
         var c1 = string.charCodeAt(n);
         var enc = null;
- 
-        if (c1 < 128) { end++; } 
+
+        if (c1 < 128) { end++; }
         else if (c1 > 127 && c1 < 2048) { enc = String.fromCharCode((c1 >> 6) | 192) + String.fromCharCode((c1 & 63) | 128); }
         else { enc = String.fromCharCode((c1 >> 12) | 224) + String.fromCharCode(((c1 >> 6) & 63) | 128) + String.fromCharCode((c1 & 63) | 128); }
         if (enc !== null) {
@@ -159,21 +202,21 @@ encode: function(text) {
             start = end = n + 1;
         }
     }
- 
+
     if (end > start) { utftext += string.slice(start, stringl); }
     return utftext;
 },
 decode: function(text) {
-    // Converts a UTF-8 encoded string to ISO-8859-1  
+    // Converts a UTF-8 encoded string to ISO-8859-1
     var tmp_arr = [],
         i = 0,
         ac = 0,
         c1 = 0,
         c2 = 0,
         c3 = 0;
- 
+
     text += '';
- 
+
     while (i < text.length) {
         c1 = text.charCodeAt(i);
         if (c1 < 128) {
@@ -193,7 +236,8 @@ decode: function(text) {
      return tmp_arr.join('');
 },
 guess: function (text) {
-     if (text.match(/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/)) { return this.decode(text); }
+     var test = text.match(/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/);
+     if (!test || !test[0]) { return this.decode(text); }
      else { return this.encode(text); }
 }
 },
@@ -204,7 +248,7 @@ CRC32: {
     encode: function (str) {
         str = METHODS.UTF8.encode(str);
     	var table = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
- 
+
         var crc = 0;
         var x = 0;
         var y = 0;
@@ -242,32 +286,32 @@ encode: function (str) {
             return (lResult ^ lX8 ^ lY8);
         }
     };
- 
+
     var _F = function (x, y, z) { return (x & y) | ((~x) & z); };
     var _G = function (x, y, z) { return (x & z) | (y & (~z)); };
     var _H = function (x, y, z) { return (x ^ y ^ z); };
     var _I = function (x, y, z) { return (y ^ (x | (~z))); };
- 
+
     var _FF = function (a, b, c, d, x, s, ac) {
         a = addUnsigned(a, addUnsigned(addUnsigned(_F(b, c, d), x), ac));
         return addUnsigned(rotateLeft(a, s), b);
     };
- 
+
     var _GG = function (a, b, c, d, x, s, ac) {
         a = addUnsigned(a, addUnsigned(addUnsigned(_G(b, c, d), x), ac));
         return addUnsigned(rotateLeft(a, s), b);
     };
- 
+
     var _HH = function (a, b, c, d, x, s, ac) {
         a = addUnsigned(a, addUnsigned(addUnsigned(_H(b, c, d), x), ac));
         return addUnsigned(rotateLeft(a, s), b);
     };
- 
+
     var _II = function (a, b, c, d, x, s, ac) {
         a = addUnsigned(a, addUnsigned(addUnsigned(_I(b, c, d), x), ac));
         return addUnsigned(rotateLeft(a, s), b);
     };
- 
+
     var convertToWordArray = function (str) {
         var lWordCount;
         var lMessageLength = str.length;
@@ -290,7 +334,7 @@ encode: function (str) {
         lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
         return lWordArray;
     };
- 
+
     var wordToHex = function (lValue) {
         var wordToHexValue = "",
             wordToHexValue_temp = "",
@@ -302,7 +346,7 @@ encode: function (str) {
         }
         return wordToHexValue;
     };
- 
+
     var x = [],
         k, AA, BB, CC, DD, a, b, c, d, S11 = 7,
         S12 = 12,
@@ -320,14 +364,14 @@ encode: function (str) {
         S42 = 10,
         S43 = 15,
         S44 = 21;
- 
+
     str = METHODS.UTF8.encode(str);
     x = convertToWordArray(str);
     a = 0x67452301;
     b = 0xEFCDAB89;
     c = 0x98BADCFE;
     d = 0x10325476;
- 
+
     xl = x.length;
     for (k = 0; k < xl; k += 16) {
         AA = a;
@@ -403,7 +447,7 @@ encode: function (str) {
         c = addUnsigned(c, CC);
         d = addUnsigned(d, DD);
     }
- 
+
     var temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
     return temp.toUpperCase();
 },
@@ -562,7 +606,7 @@ rusD['F'] = ['\u0424', 'F'];
     	}
     	return text;
     }
-    
+
     var trans="";
     for (var nchar=0;nchar<text.length;nchar++) trans = untranslit(trans+text.substr(nchar,1));
     return trans;
@@ -571,14 +615,15 @@ rusD['F'] = ['\u0424', 'F'];
 encode : function(text) {
     var trTBL = {'\u0430':'a', '\u0431':'b', '\u0432':'v', '\u0433':'g', '\u0434':'d', '\u0435':'e', '\u0451':'ye', '\u0436':'zh', '\u0437':'z', '\u0438':'i', '\u0439':'y', '\u043a':'k', '\u043b':'l', '\u043c':'m', '\u043d':'n', '\u043e':'o', '\u043f':'p', '\u0440':'r', '\u0441':'s', '\u0442':'t', '\u0443':'u', '\u0444':'f', '\u0445':'kh', '\u0446':'ts', '\u0447':'ch', '\u0448':'sh', '\u0449':'shch', '\u044a':'\"', '\u044b':'y', '\u044c':'\'', '\u044d':'e', '\u044e':'yu', '\u044f':'ya', '\u0410':'A', '\u0411':'B', '\u0412':'V', '\u0413':'G', '\u0414':'D', '\u0415':'E', '\u0401':'Ye', '\u0416':'Zh', '\u0417':'Z', '\u0418':'I', '\u0419':'Y', '\u041a':'K', '\u041b':'L', '\u041c':'M', '\u041d':'N', '\u041e':'O', '\u041f':'P', '\u0420':'R', '\u0421':'S', '\u0422':'T', '\u0423':'U', '\u0424':'F', '\u0425':'Kh', '\u0426':'Ts', '\u0427':'Ch', '\u0428':'Sh', '\u0429':'Shch', '\u042a':'\"\"', '\u042b':'Y', '\u042c':'\'\'', '\u042d':'E', '\u042e':'Yu', '\u042f':'Ya' };
     function translit(symb) { return trTBL[symb] ? trTBL[symb] : symb; }
-    
+
     var trans="";
     for (var n=0;n<text.length;n++) trans += translit(text.substr(n,1));
     return trans;
 },
 guess: function (text) {
-     if (text.match(/[\u0430-\u044f\u0410-\u042f]+/i)) { return this.encode(text); }
-     else { return this.decode(text); }
+     var test = text.match(/[\u0430-\u044f\u0410-\u042f]+/i);
+     if (!test || !test[0]) { return this.decode(text); }
+     else { return this.encode(text); }
 }
 },
 
@@ -589,7 +634,7 @@ quote_style: null,
 charset: null,
 double_encode: null,
 encode: function  (string) {
-    // Convert special characters (< > etc) to HTML entities  
+    // Convert special characters (< > etc) to HTML entities
     var optTemp = 0,
         i = 0,
         noquotes = false,
@@ -602,7 +647,7 @@ encode: function  (string) {
         string = string.replace(/&/g, '&amp;');
     }
     string = string.replace(/</g, '&lt;').replace(/>/g, '&gt;');
- 
+
     var OPTS = {
         'ENT_NOQUOTES': 0,
         'ENT_HTML_QUOTE_SINGLE': 1,
@@ -628,11 +673,11 @@ encode: function  (string) {
         string = string.replace(/'/g, '&#039;');
     }
     if (!noquotes) { string = string.replace(/"/g, '&quot;'); }
- 
+
     return string;
 },
 decode: function  (string) {
-    // Convert special HTML entities back to characters  
+    // Convert special HTML entities back to characters
     var optTemp = 0,
         i = 0,
         noquotes = false,
@@ -673,12 +718,13 @@ decode: function  (string) {
     }
     // Put this in last place to avoid escape being double-decoded
     string = string.replace(/&amp;/g, '&');
- 
+
     return string;
 },
 guess: function (text) {
-     if (text.match(/&\#|&\w+;/)) { return this.decode(text); }
-     else { return this.encode(text); }
+     var test = text.match(/&\#|&\w+;/);
+     if (!test || !test[0]) { return this.encode(text); }
+     else { return this.decode(text); }
 }
 },
 
@@ -833,14 +879,14 @@ translations: function(table) {
     return hash_map;
 },
 encode: function (string) {
-    // Convert all applicable characters to HTML entities  
+    // Convert all applicable characters to HTML entities
     var hash_map = {},
         symbol = '',
         tmp_str = '',
         entity = '',
 		quote_style = this.quote_style;
     tmp_str = string.toString();
- 
+
     if (false === (hash_map = this.translations('HTML_ENTITIES'))) {
         return false;
     }
@@ -849,36 +895,37 @@ encode: function (string) {
         entity = hash_map[symbol];
         tmp_str = tmp_str.split(symbol).join(entity);
     }
- 
+
     return tmp_str;
 },
 decode: function(string) {
-    // Convert all HTML entities to their applicable characters  
+    // Convert all HTML entities to their applicable characters
     var hash_map = {},
         symbol = '',
         tmp_str = '',
         entity = '',
 		quote_style = this.quote_style;
     tmp_str = string.toString();
- 
+
     if (false === (hash_map = this.translations('HTML_ENTITIES'))) {
         return false;
     }
     // fix &amp; problem
     delete(hash_map['&']);
     hash_map['&'] = '&amp;';
- 
+
     for (symbol in hash_map) {
         entity = hash_map[symbol];
         tmp_str = tmp_str.split(entity).join(symbol);
     }
     tmp_str = tmp_str.split('&#039;').join("'");
- 
+
     return tmp_str;
 },
 guess: function (text) {
-     if (text.match(/&\#|&\w+;/)) { return this.decode(text); }
-     else { return this.encode(text); }
+     var test = text.match(/&\#|&\w+;/);
+     if (!test || !test[0]) { return this.encode(text); }
+     else { return this.decode(text); }
 }
 },
 
@@ -886,8 +933,8 @@ BASE64 : {
     name: 'base64',
     help: 'Method encodes a text as base64 and the other way. Partitial encodes supported poorly.',
     encode: function (data) {
-        // Encodes string using MIME base64 algorithm  
-        // 
+        // Encodes string using MIME base64 algorithm
+        //
         // version: 1109.2015
         // discuss at: http://phpjs.org/functions/base64_encode
         var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -895,67 +942,67 @@ BASE64 : {
             ac = 0,
             enc = "",
             tmp_arr = [];
-     
+
         if (!data)
             return data;
-     
+
         data = METHODS.UTF8.encode(data + '');
-     
+
         do { // pack three octets into four hexets
             o1 = data.charCodeAt(i++);
             o2 = data.charCodeAt(i++);
             o3 = data.charCodeAt(i++);
-     
+
             bits = o1 << 16 | o2 << 8 | o3;
-     
+
             h1 = bits >> 18 & 0x3f;
             h2 = bits >> 12 & 0x3f;
             h3 = bits >> 6 & 0x3f;
             h4 = bits & 0x3f;
-     
+
             // use hexets to index into b64, and append result to encoded string
             tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
         } while (i < data.length);
-     
+
         enc = tmp_arr.join('');
-        
+
         var r = data.length % 3;
-        
+
         return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
     },
     decode: function (str) {
-        // Encodes string using MIME base64 algorithm  
-        // 
+        // Encodes string using MIME base64 algorithm
+        //
         // version: 1109.2015
         // discuss at: http://phpjs.org/functions/base64_encode
         var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
         var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
             ac = 0,
-            dec = "",
+            dec = '',
             tmp_arr = [],
-            splitters ='';
-     
+            splitters = '';
+
         if (!str)
             return str;
-     
+
         str += '';
-        
-        str.split('').forEach(function(name){
-            if(!inArray.call(b64, name) && splitters.indexOf(name) === -1) {
+
+        unique(str.split('')).forEach(function(name){
+            if(!inArray(b64, name) && splitters.indexOf(name) === -1) {
                 splitters += name;
             }
         });
-        
-        splitters = '['+splitters+']';
+
+        splitters = '[' + METHODS.REGEXESC.encode(splitters) + ']';
         var instrarray = str.split(new RegExp(splitters)).filter(function (element, index, array) {
             return (element.length >= 4);
         });
-        
+
         instrarray.forEach(function(data){
             if (data.length % 4 === 0) {
-                data = data.replace(/([^\=])\=\=?$/, '$1');
+                data = data.replace(/=+\s/, '');
             }
-            
+
             if (data.length % 4 === 1) {
                 return;
             }
@@ -964,13 +1011,13 @@ BASE64 : {
                 h2 = b64.indexOf(data.charAt(i++));
                 h3 = b64.indexOf(data.charAt(i++));
                 h4 = b64.indexOf(data.charAt(i++));
-         
+
                 bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
-         
+
                 o1 = bits >> 16 & 0xff;
                 o2 = bits >> 8 & 0xff;
                 o3 = bits & 0xff;
-         
+
                 if (h3 == 64) {
                     tmp_arr[ac++] = String.fromCharCode(o1);
                 } else if (h4 == 64) {
@@ -979,15 +1026,16 @@ BASE64 : {
                     tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
                 }
             } while (i < data.length);
-                 
+
             dec += tmp_arr.join('');
         });
-        
+
         return METHODS.UTF8.decode(dec);
     },
     guess: function (text) {
-         if (text.match(/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/i)) { return this.decode(text); }
-         else { return this.encode(text); }
+         var test = text.match(/[A-Za-z0-9+\/=]{30,}/i);
+         if (!test || !test[0]) { return this.encode(text); }
+         else { return this.decode(text); }
     }
 },
 
@@ -995,7 +1043,7 @@ UUENCODE : {
 name: 'UUE encode',
 help: 'Method encodes a text as UUE.',
 is_scalar: function (mixed_var) {
-    // Returns true if value is a scalar  
+    // Returns true if value is a scalar
     return (/boolean|number|string/).test(typeof mixed_var);
 },
 encode:function(str) {
@@ -1190,51 +1238,39 @@ bookmarklet: {
 },
 
 rot13 : {
-    name: 'ROT13',
-    help:  'Applying ROT13 to a piece of text examining its alphabetic characters and replacing each one by the letter 13 places further along in the alphabet, wrapping back to the beginning if necessary. A becomes N, B becomes O, and so on up to M, which becomes Z, then the sequence continues at the beginning of the alphabet: N becomes A, O becomes B, and so on to Z, which becomes M.',
-    alpha: '\u0430\u0431\u0432\u0433\u0434\u0435\u0451\u0436\u0437\u0438\u0439\u043a\u043b\u043c\u043d\u043e\u043f\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044a\u044b\u044c\u044d\u044e\u044f',
-    beta: 'abcdefghijklmnopqrstuvwxyz',
-    rotate: function (symbol, rotation) {
-         for (var lowercase, i = 0; i < this.alpha.length; ++i) {
+    name: 'ROT13/17',
+    help:  'Applying ROT13 to a piece of text examining its alphabetic characters and replacing each by the letter 13 places further along the English alphabet, wrapping back to the beginning if necessary. A becomes N, B becomes O, and so on up to M, which becomes Z, then the sequence continues at the beginning of the alphabet: N becomes A, O becomes B, and so on to Z, which becomes M. For Russian it\'s rotated 17 places by including "-" in the alphabet.',
+    russian: '\u0430\u0431\u0432\u0433\u0434\u0435\u0451\u0436\u0437\u0438\u0439\u043a\u043b\u043c\u043d\u043e\u043f\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044a\u044b\u044c\u044d\u044e\u044f-',
+    english: 'abcdefghijklmnopqrstuvwxyz',
+    rotate: function (symbol) {
+         var elen = this.english.length,
+               rlen = this.russian.length;
+         for (var rotation, lowercase, i = 0, l = rlen; i < l; ++i) {
              lowercase = symbol.toLowerCase();
-             if (this.beta[i] == lowercase)
-                 return lowercase == symbol ? this.beta[(i + rotation) % this.beta.length] : (this.beta[(i + rotation) % this.beta.length]).toUpperCase();
-             else if (this.alpha[i] == lowercase) 
-                 return lowercase == symbol ? this.alpha[(i + rotation) % this.alpha.length] : (this.alpha[(i + rotation) % this.alpha.length]).toUpperCase();
+             rotation = inArray(this.russian, lowercase) ? rlen / 2 : elen / 2;
+            // to restore text we need rotate to 17 for russian and 13 for english
+            // Russian is just for fun it is only reversible with the same operation for English as Russian alphabet has odd length.
+             if (this.english[i] == lowercase)
+                 return lowercase == symbol ? this.english[(i + rotation) % elen] : (this.english[(i + rotation) % elen]).toUpperCase();
+             else if (this.russian[i] == lowercase)
+                 return lowercase == symbol ? this.russian[(i + rotation) % rlen] : (this.russian[(i + rotation) % rlen]).toUpperCase();
          }
          return null;
     },
     encode: function (text) {
         if (!text) return;
-        var rot = 13;
-    
         var res = '';
         for (var cd, i = 0; i < text.length; ++i) {
-            if (cd = this.rotate(text[i], rot)) res += cd;
+            if (cd = this.rotate(text[i])) res += cd;
             else res += text[i];
         }
         return res;
     },
     decode: function (text) {
-        if (!text) return;
-        var rot = 13;
-        var res = '';
-        var inArray = function(needle) {
-            for(var i = 0, l = this.length; i < l; i++) if(this[i] == needle) return true;
-            return false;
-        };
-        
-        for (var cd, i = 0; i < text.length; ++i) {
-            // to restore text we need rotate to 20 for russian and 13 for english
-            // russian is just for fun it is only reversible with same operation in english
-            rot = inArray.call(this.alpha, text[i].toLowerCase()) ? 20 : 13;
-            if (cd = this.rotate(text[i], rot)) res += cd;
-            else res += text[i];
-        }
-        return res;
+        return this.encode(text);
     },
     guess: function (text) {
-        return text;
+        return this.encode(text);
     }
 },
 
@@ -1243,22 +1279,22 @@ timestamp: {
     help: 'Method converts unix epoch to human readable date.',
     encode: function(text) {
         if (!text) return;
-        
+
         function localTimezone(d){
             if(!d) d = new Date();
-            var gmtHours = -d.getTimezoneOffset()/60; 
-            var xc=''; 
+            var gmtHours = -d.getTimezoneOffset()/60;
+            var xc='';
             if (gmtHours > -1) xc = '+';
             return 'GMT' + xc + gmtHours;
         }
-        
+
 	var epoch = parseInt(text.replace(/[^\d]/i,''), 10);
 	if (isNaN(epoch) || epoch === 0) return;
-	
+
 	var outputtext = '';
 	var extraInfo = false;
 	if(epoch > 1000000000000){
-		// Assuming that this timestamp is in milliseconds...	
+		// Assuming that this timestamp is in milliseconds...
 		epoch = Math.round(epoch / 1000);
 	} else {
 		if(epoch > 10000000000) extraInfo = true;
@@ -1267,8 +1303,8 @@ timestamp: {
 	var datum = new Date(epoch);
 	var localeString = datum.toLocaleString();
 	var localeStringEnd = localeString.search(/GMT/i);
-	if (localeStringEnd > 0) { 
-	    localeString=localeString.substring(0, localeStringEnd); 
+	if (localeStringEnd > 0) {
+	    localeString=localeString.substring(0, localeStringEnd);
 	}
 	outputtext += 'GMT: '+datum.toGMTString().replace(/\s+GMT\s*/i,'')+'\nSYST: '+localeString+' '+localTimezone(datum);
 	if (extraInfo) outputtext+='-> ' + epoch + ' seconds';
@@ -1276,14 +1312,13 @@ timestamp: {
     },
 },
 
-
 reverse: {
     name: 'Reverse',
     help: 'Method reverses string lettering. For example Test becomes tseT and the other way.',
-    encode: function(text) { return text.split("").reverse().join(""); },
+    encode: function(text) { return text.split('').reverse().join(''); },
     decode: function(text) { return this.encode(text); },
     guess: function (text) {
-        return this.encode(text); // most promising one ^_^
+        return this.encode(text);
     }
 }
 }; /* METHODS*/
