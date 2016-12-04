@@ -18,6 +18,34 @@ function unique(arr) {
 }
 
 var METHODS = {
+
+fixKBlayout: {
+    name: 'Keyboard layout RUS/ENG',
+    help: 'Fixes invalid keyboard layout for Cyrillic/Latin letters.',
+    RUS: "\u0451\u0401!\"\u2116;%:?\u0439\u0446\u0443\u043a\u0435\u043d\u0433\u0448\u0449\u0437\u0445\u044a\u0444\u044b\u0432\u0430\u043f\u0440\u043e\u043b\u0434\u0436\u044d\u044f\u0447\u0441\u043c\u0438\u0442\u044c\u0431\u044e.\u0419\u0426\u0423\u041a\u0415\u041d\u0413\u0428\u0429\u0417\u0425\u042a\u0424\u042b\u0412\u0410\u041f\u0420\u041e\u041b\u0414\u0416\u042d/\u042f\u0427\u0421\u041c\u0418\u0422\u042c\u0411\u042e,",
+    ENG: "`~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
+    encode: function(text) {
+        var c = '';
+        for (var i = 0; i < text.length; i++) {
+            var j = this.ENG.indexOf(text.charAt(i));
+            c += (j < 0) ? text.charAt(i) : this.RUS.charAt(j);
+        }
+        return c;
+    },
+    decode: function(text) {
+        var c = '';
+        for (var i = 0; i < text.length; i++) {
+            var j = this.RUS.indexOf(text.charAt(i));
+            c += (j < 0) ? text.charAt(i) : this.ENG.charAt(j);
+        }
+        return c;
+    },
+    guess: function (text) {
+        if (/[\u0430-\u044f\u0410-\u042f]/.test(text)) return this.decode(text);
+        else return this.encode(text);
+    }
+},
+
 hexunicode : {
     name: 'JavaScript escape',
     help:  'The JavaScript escape method returns an encoded local codepage characters in \\uNNNN format. It will not encode Latin characters. Decoding function reverts that.',
@@ -42,6 +70,369 @@ hexunicode : {
     guess: function (text) {
         if (text.match(/\\u[0-9a-f]{3,4}/i)) { return this.decode(text); }
         else { return this.encode(text); }
+    }
+},
+
+JSONLiteral: {
+    name: 'JSON string literal',
+    help: 'Method converts string to/from a valid JSON string literal between double(!) quotes.',
+    decode: function (string) {
+        return string.replace(/\\(?:"|\\|n|r|u2028|u2029)/g, function (character) {
+            switch (character) {
+              case '\\"':
+                return '"';
+              case '\\':
+                return '\\';
+              case '\\n':
+                return '\n';
+              case '\\r':
+                return '\r';
+              case '\\u2028':
+                return '\u2028';
+              case '\\u2029':
+                return '\u2029';
+              default:
+                return character;
+            }
+        })
+    },
+    encode: function (string) {
+        return string.replace(/\\?["\\\n\r\u2028\u2029]/g, function (character) {
+            switch (character) {
+              case '"':
+              case '\\':
+                return '\\' + character;
+              case '\n':
+                return '\\n';
+              case '\r':
+                return '\\r';
+              case '\u2028':
+                return '\\u2028';
+              case '\u2029':
+                return '\\u2029';
+              default:
+                return character;
+            }
+        })
+    },
+    guess: function (text) {
+        if (text.match(/\b\\?["\n\r\u2028\u2029]/i)) { return this.encode(text); }
+        else { return this.decode(text); }
+    }
+},
+
+// JavaScript Punycode converter derived from example in RFC3492.
+Punycode: {
+    name: 'Punycode',
+    help: 'Method converts URLs to/from punycode.',
+    // This object converts to and from puny-code used in IDN
+    //
+    // punycode.ToASCII ( domain )
+    //
+    // Returns a puny coded representation of "domain".
+    // It only converts the part of the domain name that
+    // has non ASCII characters. I.e. it dosent matter if
+    // you call it with a domain that already is in ASCII.
+    //
+    // punycode.ToUnicode (domain)
+    //
+    // Converts a puny-coded domain name to unicode.
+    // It only converts the puny-coded parts of the domain name.
+    // I.e. it dosent matter if you call it on a string
+    // that already has been converted to unicode.
+    //
+    //
+    utf16: {
+        // The utf16-class is necessary to convert from javascripts internal character representation to unicode and back.
+        decode: function(input){
+            var output = [], i=0, len=input.length,value,extra;
+            while (i < len) {
+                value = input.charCodeAt(i++);
+                if ((value & 0xF800) === 0xD800) {
+                    extra = input.charCodeAt(i++);
+                    if ( ((value & 0xFC00) !== 0xD800) || ((extra & 0xFC00) !== 0xDC00) ) {
+                        throw new RangeError("UTF-16(decode): Illegal UTF-16 sequence");
+                    }
+                    value = ((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000;
+                }
+                output.push(value);
+            }
+            return output;
+        },
+        encode: function (input){
+            var output = [], i=0, len=input.length,value;
+            while (i < len) {
+                value = input[i++];
+                if ( (value & 0xF800) === 0xD800 ) {
+                    throw new RangeError("UTF-16(encode): Illegal UTF-16 value");
+                }
+                if (value > 0xFFFF) {
+                    value -= 0x10000;
+                    output.push(String.fromCharCode(((value >>>10) & 0x3FF) | 0xD800));
+                    value = 0xDC00 | (value & 0x3FF);
+                }
+                output.push(String.fromCharCode(value));
+            }
+            return output.join("");
+        }
+    },
+    //Default parameters
+    initial_n : 0x80,
+    initial_bias : 72,
+    delimiter : "\x2D",
+    base : 36,
+    damp : 700,
+    tmin: 1,
+    tmax: 26,
+    skew: 38,
+    maxint : 0x7FFFFFFF,
+    // decode_digit(cp) returns the numeric value of a basic code
+    // point (for use in representing integers) in the range 0 to
+    // base-1, or base if cp is does not represent a value.
+    decode_digit: function(cp) {
+        return cp - 48 < 10 ? cp - 22 : cp - 65 < 26 ? cp - 65 : cp - 97 < 26 ? cp - 97 : this.base;
+    },
+    // encode_digit(d,flag) returns the basic code point whose value
+    // (when used for representing integers) is d, which needs to be in
+    // the range 0 to base-1. The lowercase form is used unless flag is
+    // nonzero, in which case the uppercase form is used. The behavior
+    // is undefined if flag is nonzero and digit d has no uppercase form.
+    encode_digit: function(d, flag) {
+        return d + 22 + 75 * (d < 26) - ((flag != 0) << 5);
+        //  0..25 map to ASCII a..z or A..Z
+        // 26..35 map to ASCII 0..9
+    },
+    //** Bias adaptation function **
+    adapt: function(delta, numpoints, firsttime ) {
+        var k;
+        delta = firsttime ? Math.floor(delta / this.damp) : (delta >> 1);
+        delta += Math.floor(delta / numpoints);
+
+        for (k = 0; delta > (((this.base - this.tmin) * this.tmax) >> 1); k += this.base) {
+                delta = Math.floor(delta / ( this.base - this.tmin ));
+        }
+        return Math.floor(k + (this.base - this.tmin + 1) * delta / (delta + this.skew));
+    },
+    // encode_basic(bcp,flag) forces a basic code point to lowercase if flag is zero,
+    // uppercase if flag is nonzero, and returns the resulting code point.
+    // The code point is unchanged if it is caseless.
+    // The behavior is undefined if bcp is not a basic code point.
+    encode_basic: function(bcp, flag) {
+        bcp -= (bcp - 97 < 26) << 5;
+        return bcp + ((!flag && (bcp - 65 < 26)) << 5);
+    },
+    toUTF: function(input,preserveCase) {
+        // Dont use utf16
+        var output=[];
+        var case_flags=[];
+        var input_length = input.length;
+
+        var n, out, i, bias, basic, j, ic, oldi, w, k, digit, t, len;
+
+        // Initialize the state:
+
+        n = this.initial_n;
+        i = 0;
+        bias = this.initial_bias;
+
+        // Handle the basic code points: Let basic be the number of input code
+        // points before the last delimiter, or 0 if there is none, then
+        // copy the first basic code points to the output.
+
+        basic = input.lastIndexOf(this.delimiter);
+        if (basic < 0) basic = 0;
+
+        for (j = 0; j < basic; ++j) {
+            if(preserveCase) case_flags[output.length] = ( input.charCodeAt(j) -65 < 26);
+            if ( input.charCodeAt(j) >= 0x80) {
+                throw new RangeError("Illegal input >= 0x80");
+            }
+            output.push( input.charCodeAt(j) );
+        }
+
+        // Main decoding loop: Start just after the last delimiter if any
+        // basic code points were copied; start at the beginning otherwise.
+        for (ic = basic > 0 ? basic + 1 : 0; ic < input_length; ) {
+
+            // ic is the index of the next character to be consumed,
+
+            // Decode a generalized variable-length integer into delta,
+            // which gets added to i. The overflow checking is easier
+            // if we increase i as we go, then subtract off its starting
+            // value at the end to obtain delta.
+            for (oldi = i, w = 1, k = this.base; ; k += this.base) {
+                    if (ic >= input_length) {
+                        throw RangeError ("punycode_bad_input(1)");
+                    }
+                    digit = this.decode_digit(input.charCodeAt(ic++));
+
+                    if (digit >= this.base) {
+                        throw RangeError("punycode_bad_input(2)");
+                    }
+                    if (digit > Math.floor((this.maxint - i) / w)) {
+                        throw RangeError ("punycode_overflow(1)");
+                    }
+                    i += digit * w;
+                    t = k <= bias ? this.tmin : k >= bias + this.tmax ? this.tmax : k - bias;
+                    if (digit < t) { break; }
+                    if (w > Math.floor(this.maxint / (this.base - t))) {
+                        throw RangeError("punycode_overflow(2)");
+                    }
+                    w *= (this.base - t);
+            }
+
+            out = output.length + 1;
+            bias = this.adapt(i - oldi, out, oldi === 0);
+
+            // i was supposed to wrap around from out to 0,
+            // incrementing n each time, so we'll fix that now:
+            if ( Math.floor(i / out) > this.maxint - n) {
+                throw RangeError("punycode_overflow(3)");
+            }
+            n += Math.floor( i / out ) ;
+            i %= out;
+
+            // Insert n at position i of the output:
+            // Case of last character determines uppercase flag:
+            if (preserveCase) { case_flags.splice(i, 0, input.charCodeAt(ic -1) -65 < 26);}
+
+            output.splice(i, 0, n);
+            i++;
+        }
+        if (preserveCase) {
+            for (i = 0, len = output.length; i < len; i++) {
+                if (case_flags[i]) {
+                    output[i] = (String.fromCharCode(output[i]).toUpperCase()).charCodeAt(0);
+                }
+            }
+        }
+        return this.utf16.encode(output);
+    },
+    toASCII: function (input,preserveCase) {
+        //** Bias adaptation function **
+
+        var n, delta, h, b, bias, j, m, q, k, t, ijv, case_flags;
+
+        if (preserveCase) {
+            // Preserve case, step1 of 2: Get a list of the unaltered string
+            case_flags = this.utf16.decode(input);
+        }
+        // Converts the input in UTF-16 to Unicode
+        input = this.utf16.decode(input.toLowerCase());
+
+        var input_length = input.length; // Cache the length
+
+        if (preserveCase) {
+            // Preserve case, step2 of 2: Modify the list to true/false
+            for (j=0; j < input_length; j++) {
+                case_flags[j] = input[j] != case_flags[j];
+            }
+        }
+
+        var output=[];
+
+        // Initialize the state:
+        n = this.initial_n;
+        delta = 0;
+        bias = this.initial_bias;
+
+        // Handle the basic code points:
+        for (j = 0; j < input_length; ++j) {
+            if ( input[j] < 0x80) {
+                output.push(
+                    String.fromCharCode(
+                        case_flags ? this.encode_basic(input[j], case_flags[j]) : input[j]
+                    )
+                );
+            }
+        }
+
+        h = b = output.length;
+
+        // h is the number of code points that have been handled, b is the
+        // number of basic code points
+        if (b > 0) output.push(this.delimiter);
+
+        // Main encoding loop:
+        while (h < input_length) {
+            // All non-basic code points < n have been
+            // handled already. Find the next larger one:
+
+            for (m = this.maxint, j = 0; j < input_length; ++j) {
+                ijv = input[j];
+                if (ijv >= n && ijv < m) m = ijv;
+            }
+
+            // Increase delta enough to advance the decoder's
+            // <n,i> state to <m,0>, but guard against overflow:
+
+            if (m - n > Math.floor((this.maxint - delta) / (h + 1))) {
+                throw RangeError("punycode_overflow (1)");
+            }
+            delta += (m - n) * (h + 1);
+            n = m;
+
+            for (j = 0; j < input_length; ++j) {
+                ijv = input[j];
+
+                if (ijv < n ) {
+                    if (++delta > this.maxint) return Error("punycode_overflow(2)");
+                }
+
+                if (ijv == n) {
+                    // Represent delta as a generalized variable-length integer:
+                    for (q = delta, k = this.base; ; k += this.base) {
+                        t = k <= bias ? this.tmin : k >= bias + this.tmax ? this.tmax : k - bias;
+                        if (q < t) break;
+                        output.push( String.fromCharCode(this.encode_digit(t + (q - t) % (this.base - t), 0)) );
+                        q = Math.floor( (q - t) / (this.base - t) );
+                    }
+                    output.push( String.fromCharCode(this.encode_digit(q, preserveCase && case_flags[j] ? 1:0 )));
+                    bias = this.adapt(delta, h + 1, h == b);
+                    delta = 0;
+                    ++h;
+                }
+            }
+
+            ++delta, ++n;
+        }
+        return output.join("");
+    },
+    encode: function ( text ) {
+        var domain = text.match(/(https?:\/\/)?(?:[^@]*@)?([^\s\/?#@:]+)(?::\d*)?/i);
+        if (!domain[2]) return text;
+        var domain_array = domain[2].split(".");
+        var out = [];
+        for (var i=0; i < domain_array.length; ++i) {
+            var s = domain_array[i];
+            out.push(
+                s.match(/[^A-Za-z0-9-]/) ?
+                "xn--" + this.toASCII(s) :
+                s
+            );
+        }
+        return (domain[1] || '') + out.join(".");
+    },
+    decode: function (text) {
+        var domain = text.match(/(https?:\/\/)?(?:[^@]*@)?([^\s\/?#@:]+)(?::\d*)?/i);
+        if (!domain[2]) return text;
+        var domain_array = domain[2].split(".");
+        var out = [];
+        for (var i=0; i < domain_array.length; ++i) {
+            var s = domain_array[i];
+            out.push(
+                s.match(/^xn--/) ?
+                this.toUTF(s.slice(4)) :
+                s
+            );
+        }
+        return (domain[1] || '') + out.join(".");
+    },
+    guess: function (text) {
+        var domain = text.match(/(?:https?:\/\/)?(?:[^@]*@)?([^\s\/?#@:]+)(?::\d*)?/i);
+        if (!domain[1]) return text;
+        if (domain[1].match(/[/.0-9a-zA-Z+_-]{3,4}/i)) { return this.decode(text + ' '); }
+        else { return this.encode(text + ' '); }
     }
 },
 
@@ -93,33 +484,6 @@ decimalncr : {
         var test = text.match(/\\[0-9a-f]{3,4} /i);
         if (!test || !test[0]) { return this.encode(text); }
         else { return this.decode(text); }
-    }
-},
-
-fixKBlayout: {
-    name: 'Keyboard layout RUS/ENG',
-    help: 'Fixes invalid keyboard layout for Cyrillic/Latin letters.',
-    RUS: "\u0451\u0401!\"\u2116;%:?\u0439\u0446\u0443\u043a\u0435\u043d\u0433\u0448\u0449\u0437\u0445\u044a\u0444\u044b\u0432\u0430\u043f\u0440\u043e\u043b\u0434\u0436\u044d\u044f\u0447\u0441\u043c\u0438\u0442\u044c\u0431\u044e.\u0419\u0426\u0423\u041a\u0415\u041d\u0413\u0428\u0429\u0417\u0425\u042a\u0424\u042b\u0412\u0410\u041f\u0420\u041e\u041b\u0414\u0416\u042d/\u042f\u0427\u0421\u041c\u0418\u0422\u042c\u0411\u042e,",
-    ENG: "`~!@#$%^&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"|ZXCVBNM<>?",
-    encode: function(text) {
-        var c = '';
-        for (var i = 0; i < text.length; i++) {
-            var j = this.ENG.indexOf(text.charAt(i));
-            c += (j < 0) ? text.charAt(i) : this.RUS.charAt(j);
-        }
-        return c;
-    },
-    decode: function(text) {
-        var c = '';
-        for (var i = 0; i < text.length; i++) {
-            var j = this.RUS.indexOf(text.charAt(i));
-            c += (j < 0) ? text.charAt(i) : this.ENG.charAt(j);
-        }
-        return c;
-    },
-    guess: function (text) {
-        if (this.RUS.indexOf(text.charAt(1)) === -1) return this.encode(text);
-        else return this.decode(text);
     }
 },
 

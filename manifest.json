@@ -2,6 +2,9 @@
   "manifest_version": 2,
   "name": "MultiConvertor",
   "version": "1.0.8",
+  "developer": {
+    "name": "DitherSky"
+  },
   "icons": {
     "48": "icons/icon.png"
   },

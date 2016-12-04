@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget xmlns="http://www.w3.org/ns/widgets" id="https://dithersky.wordpress.com/my-modifications" version="1.0.8">
   <name>MultiConvertor</name>
-  <author href="https://dithersky.wordpress.com">Dither</author>
+  <author href="https://dithersky.wordpress.com">DitherSky</author>
   <description>Do most common web programmer's conversions with ease.</description>
   <icon src="icons/icon.png"/>
   <!--<credit>icon.png from Iconfinder - non-comercial free license.</credit> -->

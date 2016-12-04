@@ -21,6 +21,8 @@ fieldset {
 }
 
 textarea {
+    object-fit: fill;
+    resize: none;
     padding: 3px;
     margin-bottom: 10px;
     font-family: "consolas", "Terminus", "lucida console", "courier new", "courier", monospace;
@@ -82,7 +84,7 @@ button {
 
 #spanmethod {
     float: left;
-    margin-right: 10px;    
+    margin-right: 10px;
 }
 
 #spandirection {
